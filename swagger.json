@@ -1,0 +1,2660 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SAR Backend API",
+    "description": "API documentation for Car Sales ERP System",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "CarInspection": {
+        "type": "object",
+        "properties": {
+          "inspection_id": {
+            "type": "integer",
+            "description": "Unique identifier for the inspection"
+          },
+          "car_id": {
+            "type": "integer",
+            "description": "ID of the inspected car"
+          },
+          "inspection_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the inspection"
+          },
+          "inspector_id": {
+            "type": "integer",
+            "description": "ID of the employee who performed the inspection"
+          },
+          "inspection_notes": {
+            "type": "string",
+            "description": "Notes from the inspection"
+          },
+          "before_repair_image_link": {
+            "type": "string",
+            "description": "URL of the image taken before repair"
+          }
+        }
+      },
+      "Car": {
+        "type": "object",
+        "properties": {
+          "car_id": {
+            "type": "integer",
+            "description": "Unique identifier for the car"
+          },
+          "car_code": {
+            "type": "string",
+            "description": "Unique code for the car"
+          },
+          "brand_id": {
+            "type": "integer",
+            "description": "ID of the car brand"
+          },
+          "model_id": {
+            "type": "integer",
+            "description": "ID of the car model"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["car_entry", "inspection", "maintenance", "available", "reserved", "approved", "delivery", "payment_received", "sold", "pending"],
+            "description": "Current status of the car"
+          }
+        }
+      },
+      "Employee": {
+        "type": "object",
+        "properties": {
+          "employee_id": {
+            "type": "integer",
+            "description": "Unique identifier for the employee"
+          },
+          "employee_code": {
+            "type": "string",
+            "description": "Unique code for the employee"
+          },
+          "full_name": {
+            "type": "string",
+            "description": "Full name of the employee"
+          },
+          "position": {
+            "type": "string",
+            "description": "Position of the employee"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address of the employee"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number of the employee"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["business_owner", "admin", "sales", "purchasing", "accounting", "maintenance", "hr", "user"],
+            "description": "Role of the employee"
+          }
+        }
+      },
+      "Reservation": {
+        "type": "object",
+        "properties": {
+          "reservation_id": {
+            "type": "integer"
+          },
+          "customer_id": {
+            "type": "integer"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        }
+      },
+      "Sale": {
+        "type": "object",
+        "properties": {
+          "sale_id": {
+            "type": "integer"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "customer_id": {
+            "type": "integer"
+          },
+          "sale_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sale_price": {
+            "type": "number"
+          },
+          "salesperson_id": {
+            "type": "integer"
+          },
+          "branchBranch_id": {
+            "type": "integer"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "employee": {
+            "$ref": "#/components/schemas/Employee"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/Branch"
+          }
+        }
+      },
+      "Branch": {
+        "type": "object",
+        "properties": {
+          "branch_id": {
+            "type": "integer"
+          },
+          "branch_name": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          }
+        }
+      },
+      "BankEmployee": {
+        "type": "object",
+        "properties": {
+          "bank_employee_id": {
+            "type": "integer"
+          },
+          "bank_name": {
+            "type": "string"
+          },
+          "employee_name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "position": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "bankTransferTracking": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BankTransferTracking"
+            }
+          }
+        }
+      },
+      "Accounting": {
+        "type": "object",
+        "properties": {
+          "accounting_id": {
+            "type": "integer"
+          },
+          "transaction_type": {
+            "type": "string",
+            "enum": ["INCOME", "EXPENSE"]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transaction_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "branch_id": {
+            "type": "integer"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/Branch"
+          }
+        }
+      },
+      "CustomerPurchaseHistory": {
+        "type": "object",
+        "properties": {
+          "history_id": {
+            "type": "integer"
+          },
+          "customer_id": {
+            "type": "integer"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "purchase_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "purchase_price": {
+            "type": "number"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          }
+        }
+      },
+      "BankTransferTracking": {
+        "type": "object",
+        "properties": {
+          "tracking_id": {
+            "type": "integer"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "follow_up_number": {
+            "type": "integer"
+          },
+          "follow_up_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bank_employee_id": {
+            "type": "integer"
+          },
+          "follow_up_note": {
+            "type": "string"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          },
+          "bankEmployee": {
+            "$ref": "#/components/schemas/BankEmployee"
+          }
+        }
+      },
+      "LiveSchedule": {
+        "type": "object",
+        "properties": {
+          "live_id": {
+            "type": "integer"
+          },
+          "live_category": {
+            "type": "string"
+          },
+          "branch_id": {
+            "type": "integer"
+          },
+          "start_datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/Branch"
+          }
+        }
+      },
+      "TaxInvoice": {
+        "type": "object",
+        "properties": {
+          "invoice_id": {
+            "type": "integer"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "invoice_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customer_id": {
+            "type": "integer"
+          },
+          "sale_price_before_vat": {
+            "type": "number"
+          },
+          "vat_7_percent": {
+            "type": "number"
+          },
+          "sale_price_incl_vat": {
+            "type": "number"
+          },
+          "invoice_type": {
+            "type": "string"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          }
+        }
+      },
+      "PurchaseTaxInvoice": {
+        "type": "object",
+        "properties": {
+          "purchase_invoice_id": {
+            "type": "integer"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "invoice_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "invoice_number": {
+            "type": "string"
+          },
+          "supplier_id": {
+            "type": "integer"
+          },
+          "product_value_before_vat": {
+            "type": "number"
+          },
+          "vat_7_percent": {
+            "type": "number"
+          },
+          "product_value_incl_operations": {
+            "type": "number"
+          },
+          "no_vat": {
+            "type": "boolean"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          },
+          "supplier": {
+            "$ref": "#/components/schemas/Supplier"
+          }
+        }
+      },
+      "WithholdingTaxInvoice": {
+        "type": "object",
+        "properties": {
+          "withholding_invoice_id": {
+            "type": "integer"
+          },
+          "car_id": {
+            "type": "integer"
+          },
+          "invoice_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "invoice_number": {
+            "type": "string"
+          },
+          "vat_3_percent": {
+            "type": "number"
+          },
+          "car": {
+            "$ref": "#/components/schemas/Car"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Server Health Check",
+        "description": "Returns the health status of the server",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uptime": {
+                      "type": "number",
+                      "description": "Server uptime in seconds"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "OK"
+                    },
+                    "timestamp": {
+                      "type": "number",
+                      "description": "Current server timestamp"
+                    },
+                    "serverInfo": {
+                      "type": "object",
+                      "properties": {
+                        "nodeVersion": {
+                          "type": "string"
+                        },
+                        "memoryUsage": {
+                          "type": "object"
+                        },
+                        "cpuUsage": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/maintenance": {
+      "get": {
+        "summary": "Get all maintenance records",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of maintenance records"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new maintenance record",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "maintenance_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "cost": {
+                    "type": "number"
+                  },
+                  "employee_id": {
+                    "type": "integer"
+                  },
+                  "maintenance_status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Maintenance record created successfully"
+          }
+        }
+      }
+    },
+    "/api/maintenance/{id}": {
+      "get": {
+        "summary": "Get maintenance record by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Maintenance record details"
+          }
+        }
+      }
+    },
+    "/api/car-inspections": {
+      "get": {
+        "tags": ["Car Inspections"],
+        "summary": "Get all car inspection records",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of car inspection records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarInspection"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Car Inspections"],
+        "summary": "Create new car inspection record",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["car_id", "inspection_date", "inspector_id"],
+                "properties": {
+                  "car_id": {
+                    "type": "integer",
+                    "description": "ID of the car being inspected"
+                  },
+                  "inspection_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Date and time of inspection"
+                  },
+                  "inspector_id": {
+                    "type": "integer",
+                    "description": "ID of the employee performing the inspection"
+                  },
+                  "inspection_notes": {
+                    "type": "string",
+                    "description": "Notes from the inspection"
+                  },
+                  "before_repair_image_link": {
+                    "type": "string",
+                    "description": "URL of the image taken before repair"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Car inspection record created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarInspection"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/car-inspections/car/{carId}": {
+      "get": {
+        "tags": ["Car Inspections"],
+        "summary": "Get all inspections for a specific car",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "carId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the car"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of inspections for the specified car",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarInspection"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No inspection records found for this car"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/car-inspections/{inspectionId}": {
+      "get": {
+        "tags": ["Car Inspections"],
+        "summary": "Get car inspection by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "inspectionId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the inspection record"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Car inspection record details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarInspection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Inspection record not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Car Inspections"],
+        "summary": "Update car inspection record",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "inspectionId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the inspection record"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "inspection_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "inspection_notes": {
+                    "type": "string"
+                  },
+                  "before_repair_image_link": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Car inspection record updated successfully"
+          },
+          "404": {
+            "description": "Inspection record not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Car Inspections"],
+        "summary": "Delete car inspection record",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "inspectionId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the inspection record"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Car inspection record deleted successfully"
+          },
+          "404": {
+            "description": "Inspection record not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/reservations": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Get all reservations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reservations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Create new reservation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customer_id", "car_id", "reservation_date", "status"],
+                "properties": {
+                  "customer_id": {
+                    "type": "integer"
+                  },
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "reservation_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reservation created successfully"
+          }
+        }
+      }
+    },
+    "/api/reservations/{reservationId}": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Get reservation by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservationId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Reservations"],
+        "summary": "Update reservation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservationId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reservation_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reservation updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Reservations"],
+        "summary": "Delete reservation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservationId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/sales": {
+      "get": {
+        "tags": ["Sales"],
+        "summary": "Get all sales",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sales",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Sale"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Sales"],
+        "summary": "Create new sale",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["car_id", "customer_id", "sale_date", "sale_price", "salesperson_id"],
+                "properties": {
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "customer_id": {
+                    "type": "integer"
+                  },
+                  "sale_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "sale_price": {
+                    "type": "number"
+                  },
+                  "salesperson_id": {
+                    "type": "integer"
+                  },
+                  "branchBranch_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sale created successfully"
+          }
+        }
+      }
+    },
+    "/api/sales/{saleId}": {
+      "get": {
+        "tags": ["Sales"],
+        "summary": "Get sale by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "saleId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sale details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Sales"],
+        "summary": "Update sale",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "saleId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sale_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "sale_price": {
+                    "type": "number"
+                  },
+                  "branchBranch_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sale updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Sales"],
+        "summary": "Delete sale",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "saleId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sale deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/bank-employees": {
+      "get": {
+        "tags": ["Bank Employees"],
+        "summary": "Get all bank employees",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of bank employees",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BankEmployee"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Bank Employees"],
+        "summary": "Create new bank employee",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["bank_name", "employee_name", "phone", "email", "position"],
+                "properties": {
+                  "bank_name": {
+                    "type": "string"
+                  },
+                  "employee_name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "position": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bank employee created successfully"
+          },
+          "400": {
+            "description": "Email or phone already exists"
+          }
+        }
+      }
+    },
+    "/api/bank-employees/{bankEmployeeId}": {
+      "get": {
+        "tags": ["Bank Employees"],
+        "summary": "Get bank employee by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bankEmployeeId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bank employee details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Bank Employees"],
+        "summary": "Update bank employee",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bankEmployeeId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bank_name": {
+                    "type": "string"
+                  },
+                  "employee_name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "position": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bank employee updated successfully"
+          },
+          "400": {
+            "description": "Email or phone already exists"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Bank Employees"],
+        "summary": "Delete bank employee",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bankEmployeeId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bank employee deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/accounting": {
+      "get": {
+        "tags": ["Accounting"],
+        "summary": "Get all accounting records",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of accounting records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Accounting"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Accounting"],
+        "summary": "Create new accounting record",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["transaction_type", "amount", "transaction_date", "branch_id"],
+                "properties": {
+                  "transaction_type": {
+                    "type": "string",
+                    "enum": ["INCOME", "EXPENSE"]
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "transaction_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "branch_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Accounting record created successfully"
+          }
+        }
+      }
+    },
+    "/api/accounting/{accountingId}": {
+      "get": {
+        "tags": ["Accounting"],
+        "summary": "Get accounting record by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountingId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accounting record details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Accounting"],
+        "summary": "Update accounting record",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountingId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transaction_type": {
+                    "type": "string",
+                    "enum": ["INCOME", "EXPENSE"]
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "transaction_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "branch_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accounting record updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Accounting"],
+        "summary": "Delete accounting record",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountingId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accounting record deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/purchase-histories": {
+      "get": {
+        "tags": ["Customer Purchase History"],
+        "summary": "Get all purchase histories",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of purchase histories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerPurchaseHistory"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customer Purchase History"],
+        "summary": "Create new purchase history",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customer_id", "car_id"],
+                "properties": {
+                  "customer_id": {
+                    "type": "integer"
+                  },
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "purchase_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "purchase_price": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Purchase history created successfully"
+          }
+        }
+      }
+    },
+    "/api/purchase-histories/{historyId}": {
+      "get": {
+        "tags": ["Customer Purchase History"],
+        "summary": "Get purchase history by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "historyId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase history details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Customer Purchase History"],
+        "summary": "Update purchase history",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "historyId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "purchase_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "purchase_price": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase history updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Customer Purchase History"],
+        "summary": "Delete purchase history",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "historyId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase history deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/transfer-trackings": {
+      "get": {
+        "tags": ["Bank Transfer Tracking"],
+        "summary": "Get all transfer trackings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of transfer trackings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BankTransferTracking"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Bank Transfer Tracking"],
+        "summary": "Create new transfer tracking",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["car_id", "follow_up_number", "follow_up_date", "bank_employee_id"],
+                "properties": {
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "follow_up_number": {
+                    "type": "integer"
+                  },
+                  "follow_up_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "bank_employee_id": {
+                    "type": "integer"
+                  },
+                  "follow_up_note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transfer tracking created successfully"
+          }
+        }
+      }
+    },
+    "/api/transfer-trackings/{trackingId}": {
+      "get": {
+        "tags": ["Bank Transfer Tracking"],
+        "summary": "Get transfer tracking by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "trackingId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer tracking details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Bank Transfer Tracking"],
+        "summary": "Update transfer tracking",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "trackingId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "follow_up_number": {
+                    "type": "integer"
+                  },
+                  "follow_up_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "bank_employee_id": {
+                    "type": "integer"
+                  },
+                  "follow_up_note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transfer tracking updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Bank Transfer Tracking"],
+        "summary": "Delete transfer tracking",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "trackingId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer tracking deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/live-schedules": {
+      "get": {
+        "tags": ["Live Schedule"],
+        "summary": "Get all live schedules",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of live schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LiveSchedule"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Live Schedule"],
+        "summary": "Create new live schedule",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["live_category", "branch_id", "start_datetime", "end_datetime"],
+                "properties": {
+                  "live_category": {
+                    "type": "string"
+                  },
+                  "branch_id": {
+                    "type": "integer"
+                  },
+                  "start_datetime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end_datetime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Live schedule created successfully"
+          }
+        }
+      }
+    },
+    "/api/live-schedules/upcoming": {
+      "get": {
+        "tags": ["Live Schedule"],
+        "summary": "Get upcoming live schedules",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of upcoming live schedules"
+          }
+        }
+      }
+    },
+    "/api/live-schedules/{liveId}": {
+      "get": {
+        "tags": ["Live Schedule"],
+        "summary": "Get live schedule by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "liveId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live schedule details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Live Schedule"],
+        "summary": "Update live schedule",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "liveId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "live_category": {
+                    "type": "string"
+                  },
+                  "branch_id": {
+                    "type": "integer"
+                  },
+                  "start_datetime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end_datetime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Live schedule updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Live Schedule"],
+        "summary": "Delete live schedule",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "liveId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live schedule deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/tax-invoices": {
+      "get": {
+        "tags": ["Tax Invoice"],
+        "summary": "Get all tax invoices",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tax invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaxInvoice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Tax Invoice"],
+        "summary": "Create new tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["car_id", "invoice_date", "customer_id", "invoice_type"],
+                "properties": {
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "invoice_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "customer_id": {
+                    "type": "integer"
+                  },
+                  "sale_price_before_vat": {
+                    "type": "number"
+                  },
+                  "vat_7_percent": {
+                    "type": "number"
+                  },
+                  "sale_price_incl_vat": {
+                    "type": "number"
+                  },
+                  "invoice_type": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tax invoice created successfully"
+          }
+        }
+      }
+    },
+    "/api/tax-invoices/{invoiceId}": {
+      "get": {
+        "tags": ["Tax Invoice"],
+        "summary": "Get tax invoice by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tax invoice details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Tax Invoice"],
+        "summary": "Update tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "invoice_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "sale_price_before_vat": {
+                    "type": "number"
+                  },
+                  "vat_7_percent": {
+                    "type": "number"
+                  },
+                  "sale_price_incl_vat": {
+                    "type": "number"
+                  },
+                  "invoice_type": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tax invoice updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Tax Invoice"],
+        "summary": "Delete tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tax invoice deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/purchase-tax-invoices": {
+      "get": {
+        "tags": ["Purchase Tax Invoice"],
+        "summary": "Get all purchase tax invoices",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of purchase tax invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseTaxInvoice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Purchase Tax Invoice"],
+        "summary": "Create new purchase tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["car_id", "invoice_date", "invoice_number", "supplier_id", "no_vat"],
+                "properties": {
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "invoice_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "invoice_number": {
+                    "type": "string"
+                  },
+                  "supplier_id": {
+                    "type": "integer"
+                  },
+                  "product_value_before_vat": {
+                    "type": "number"
+                  },
+                  "vat_7_percent": {
+                    "type": "number"
+                  },
+                  "product_value_incl_operations": {
+                    "type": "number"
+                  },
+                  "no_vat": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Purchase tax invoice created successfully"
+          },
+          "400": {
+            "description": "Invoice number already exists"
+          }
+        }
+      }
+    },
+    "/api/purchase-tax-invoices/number/{invoiceNumber}": {
+      "get": {
+        "tags": ["Purchase Tax Invoice"],
+        "summary": "Get purchase tax invoice by invoice number",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invoiceNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase tax invoice details"
+          }
+        }
+      }
+    },
+    "/api/purchase-tax-invoices/{purchaseInvoiceId}": {
+      "get": {
+        "tags": ["Purchase Tax Invoice"],
+        "summary": "Get purchase tax invoice by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchaseInvoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase tax invoice details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Purchase Tax Invoice"],
+        "summary": "Update purchase tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchaseInvoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "invoice_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "invoice_number": {
+                    "type": "string"
+                  },
+                  "product_value_before_vat": {
+                    "type": "number"
+                  },
+                  "vat_7_percent": {
+                    "type": "number"
+                  },
+                  "product_value_incl_operations": {
+                    "type": "number"
+                  },
+                  "no_vat": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase tax invoice updated successfully"
+          },
+          "400": {
+            "description": "Invoice number already exists"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Purchase Tax Invoice"],
+        "summary": "Delete purchase tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchaseInvoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase tax invoice deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/withholding-tax-invoices": {
+      "get": {
+        "tags": ["Withholding Tax Invoice"],
+        "summary": "Get all withholding tax invoices",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of withholding tax invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WithholdingTaxInvoice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Withholding Tax Invoice"],
+        "summary": "Create new withholding tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["car_id", "invoice_date", "invoice_number"],
+                "properties": {
+                  "car_id": {
+                    "type": "integer"
+                  },
+                  "invoice_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "invoice_number": {
+                    "type": "string"
+                  },
+                  "vat_3_percent": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Withholding tax invoice created successfully"
+          },
+          "400": {
+            "description": "Invoice number already exists"
+          }
+        }
+      }
+    },
+    "/api/withholding-tax-invoices/number/{invoiceNumber}": {
+      "get": {
+        "tags": ["Withholding Tax Invoice"],
+        "summary": "Get withholding tax invoice by invoice number",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invoiceNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Withholding tax invoice details"
+          }
+        }
+      }
+    },
+    "/api/withholding-tax-invoices/{withholdingInvoiceId}": {
+      "get": {
+        "tags": ["Withholding Tax Invoice"],
+        "summary": "Get withholding tax invoice by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "withholdingInvoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Withholding tax invoice details"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Withholding Tax Invoice"],
+        "summary": "Update withholding tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "withholdingInvoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "invoice_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "invoice_number": {
+                    "type": "string"
+                  },
+                  "vat_3_percent": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Withholding tax invoice updated successfully"
+          },
+          "400": {
+            "description": "Invoice number already exists"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Withholding Tax Invoice"],
+        "summary": "Delete withholding tax invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "withholdingInvoiceId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Withholding tax invoice deleted successfully"
+          }
+        }
+      }
+    }
+  }
+} 

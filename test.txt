@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUSINESS_OWNER
+  ADMIN
+  SALES
+  PURCHASING
+  ACCOUNTING
+  MAINTENANCE
+  HR
+  USER // บทบาทพื้นฐานสำหรับพนักงานทั่วไป
+}
+
+enum EmployeeStatus {
+  A // Active
+  I // Inactive
+}
+
+enum EmpCardStatus {
+  Y // Yes
+  N // No
+}
+
+enum FollowUpStatus {
+  Interested
+  Reserved
+  Closed_Successful
+  Closed_Unsuccessful
+}
+
+model Employee {
+  id            Int              @id @default(autoincrement())
+  empId         String           @unique
+  prefix        String
+  fullName      String
+  nickname      String
+  position      String
+  branch        String
+  phone         String
+  email         String           @unique
+  photo         String?
+  status        EmployeeStatus   @default(A)
+  empCard       EmpCardStatus    @default(N)
+  password      String           // ควรถูกแฮชก่อนการเก็บในฐานข้อมูล
+  isFirstLogin  Boolean          @default(true)
+  role          Role             @default(USER)  // บทบาทของผู้ใช้งาน
+  followUps     FollowUp[]       @relation("EmployeeFollowUps")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([branch])
+}
+
+model Customer {
+  id              Int               @id @default(autoincrement())
+  customerId      String            @unique
+  customerName    String
+  branch          String
+  taxId           String            @unique
+  address         String
+  purchaseHistory PurchaseHistory[]
+  followUps       FollowUp[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([branch])
+}
+
+model PurchaseHistory {
+  id           Int      @id @default(autoincrement())
+  historyId    String   @unique
+  customer     Customer @relation(fields: [customerId], references: [customerId])
+  customerId   String
+  carId        String
+  purchaseDate DateTime
+  salePrice    Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+model FollowUp {
+  id            Int             @id @default(autoincrement())
+  followUpId    String          @unique
+  customer      Customer        @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
+  customerId    String
+  salesperson    Employee        @relation("EmployeeFollowUps", fields: [empId], references: [empId], onDelete: SetNull)
+  empId         String
+  followUpDate  DateTime
+  status        FollowUpStatus
+  notes         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([customerId])
+  @@index([empId])
+}
