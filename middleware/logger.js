@@ -8,7 +8,6 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   transports: [
-    // Rotate log files daily
     new winston.transports.DailyRotateFile({
       filename: 'logs/error-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
@@ -17,27 +16,40 @@ const logger = winston.createLogger({
       maxFiles: '14d'
     }),
     new winston.transports.DailyRotateFile({
-      filename: 'logs/combined-%DATE%.log',
+      filename: 'logs/warn-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
+      level: 'warn',
       maxSize: '20m',
       maxFiles: '14d'
+    }),
+    new winston.transports.DailyRotateFile({
+      filename: 'logs/info-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      level: 'info',
+      maxSize: '20m',
+      maxFiles: '14d'
+    }),
+    new winston.transports.DailyRotateFile({
+      filename: 'logs/debug-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      level: 'debug',
+      maxSize: '20m',
+      maxFiles: '14d'
+    }),
+    new winston.transports.Console({
+      format: winston.format.simple()
     })
   ]
 });
 
-// Add console logging in development
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.simple()
-  }));
-}
-
+// Middleware for logging requests
 const loggerMiddleware = (req, res, next) => {
   logger.info({
     method: req.method,
     url: req.url,
     ip: req.ip,
-    userId: req.user?.id
+    userId: req.user?.id,
+    timestamp: new Date().toISOString()
   });
   next();
 };

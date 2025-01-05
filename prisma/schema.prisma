@@ -578,8 +578,8 @@ model withholdingTaxInvoice {
 
 model RefreshToken {
   id            Int      @id @default(autoincrement())
-  employee_code String?   @unique
-  admin_id       Int?     @unique
+  employee_code String?   // ไม่ต้องการ unique constraint
+  admin_id      Int?      // ไม่ต้องการ unique constraint
   token         String
   createdAt     DateTime @default(now())
 

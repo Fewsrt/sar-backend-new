@@ -122,7 +122,7 @@ async function getCarStats(req, res) {
 async function getAllCars(req, res) {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 10000;
         const search = req.query.search || '';
         const status = req.query.status || '';
         const sortBy = req.query.sortBy || 'car_code';

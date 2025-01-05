@@ -54,7 +54,7 @@ const login = async (req, res) => {
         }
 
         // Store refresh token
-        await storeRefreshToken(employee.employee_code, refreshToken);
+        await storeRefreshToken(employee.employee_code, null, refreshToken);
 
         // Mark user as online
         await onlineStatusService.markUserOnline('employee', employee.employee_id, {
@@ -115,7 +115,7 @@ const generateLineToken = async (req, res) => {
         });
 
         // Store refresh token
-        await storeRefreshToken(employee.employee_code, refreshToken);
+        await storeRefreshToken(employee.employee_code, null, refreshToken);
 
         res.json({
             accessToken,
@@ -218,18 +218,34 @@ const logout = async (req, res) => {
             return res.status(400).json({ message: 'Token is required' });
         }
 
-        // ดึง employee_code จาก token
+        // ดึงข้อมูลจาก token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // ลบ refresh token จาก database
-        await prisma.refreshToken.delete({
-            where: {
-                employee_code: decoded.employee_code
-            }
-        });
+        if (decoded.admin_id) {
+            // ถ้าเป็น admin
+            await prisma.refreshToken.delete({
+                where: {
+                    admin_id: decoded.admin_id // ลบตาม admin_id
+                }
+            });
+        } else if (decoded.employee_code) {
+            // ถ้าเป็น employee
+            await prisma.refreshToken.delete({
+                where: {
+                    employee_code: decoded.employee_code // ลบตาม employee_code
+                }
+            });
+        } else {
+            return res.status(400).json({ message: 'Invalid token' });
+        }
 
-        // Mark user as offline
-        await onlineStatusService.markUserOffline(decoded.employee_id);
+        // Mark user as offline (ถ้าจำเป็น)
+        // if (decoded.admin_id) {
+        //     await onlineStatusService.markAdminOffline(decoded.admin_id);
+        // } else {
+        //     await onlineStatusService.markUserOffline(decoded.employee_code);
+        // }
 
         res.json({ message: 'Logged out successfully' });
     } catch (error) {
@@ -238,11 +254,49 @@ const logout = async (req, res) => {
     }
 };
 
+const loginSuperAdmin = async (req, res) => {
+    const { username, password } = req.body;
 
+    try {
+        const admin = await prisma.admin.findUnique({ where: { username } });
+        if (!admin) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        const accessToken = generateAccessToken({
+            admin_id: admin.id,
+            role: admin.role // เพิ่ม role ที่นี่
+        });
+        const refreshToken = generateRefreshToken({
+            admin_id: admin.id
+        });
+
+        // บันทึก refresh token
+        await storeRefreshToken(null, admin.id, refreshToken); // ส่ง admin.id ที่เป็น Int
+
+        res.json({
+            accessToken,
+            refreshToken,
+            employee: {
+                admin_id: admin.id,
+                role: admin.role
+            }
+        });
+    } catch (error) {
+        console.error('Login Super Admin error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
 
 module.exports = {
     login,
     generateLineToken,
     renewAccessToken,
-    logout
+    logout,
+    loginSuperAdmin
 };

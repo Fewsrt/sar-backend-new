@@ -6,7 +6,7 @@ const Sentry = require("@sentry/node");
 const figlet = require('figlet');
 const swaggerUi = require('swagger-ui-express');
 const http = require('http');
-const createSocketServer = require('./config/socketConfig');
+// const createSocketServer = require('./config/socketConfig');
 
 // Import middlewares
 const securityMiddleware = require('./middleware/security.js');
@@ -24,8 +24,9 @@ const onlineTracker = require('./middleware/onlineTracker');
 
 const app = express();
 const server = http.createServer(app);
-const io = createSocketServer(server);
+// const io = createSocketServer(server);
 
+app.use(loggerMiddleware);
 app.use(apiLimiter);
 app.use(requestLogger);
 
@@ -39,9 +40,6 @@ app.use(express.urlencoded({ extended: true }));
 // Security middleware (includes helmet, cors, rate limiting, etc.)
 app.use(securityMiddleware);
 
-// Logging middleware
-app.use(loggerMiddleware);
-
 // API Documentation - ไม่ต้องการ authentication
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(require('./swagger.json')));
 
@@ -51,16 +49,27 @@ app.use('/api', setupRoutes);
 // API routes (ต้องการ authentication และ system initialization)
 app.use('/api', requireInitialized, routes);
 
-app.get("/debug-sentry", function mainHandler(req, res) {
-  throw new Error("My first Sentry error!");
+// Global Error Handler
+app.use((err, req, res, next) => {
+    logger.error('An error occurred', { message: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Internal server error' });
 });
+
+// ตัวอย่างการบันทึก warning
+// app.use((req, res, next) => {
+//     if (someConditionThatMightBeAProblem) {
+//         logger.warn('This is a warning message', { userId: req.user?.id });
+//     }
+//     next();
+// });
 
 // 404 Handler
 app.use('*', (req, res) => {
-  res.status(404).json({
-    status: 'error',
-    message: `Route ${req.originalUrl} not found`
-  });
+    logger.warn('Route not found', { url: req.originalUrl });
+    res.status(404).json({
+        status: 'error',
+        message: `Route ${req.originalUrl} not found`
+    });
 });
 
 // Global Error Handler
@@ -72,39 +81,39 @@ app.use(onlineTracker);
 const onlineStatusService = require('./services/onlineStatusService');
 
 // Socket.io connection
-io.on('connection', async (socket) => {
+// io.on('connection', async (socket) => {
 
-    // ดึงข้อมูลสถานะออนไลน์จากบริการ
-    const onlineUsers = await onlineStatusService.getAllOnlineUsers();
+//     // ดึงข้อมูลสถานะออนไลน์จากบริการ
+//     const onlineUsers = await onlineStatusService.getAllOnlineUsers();
 
-    // ส่งข้อมูลสถานะออนไลน์เมื่อมีการเชื่อมต่อ
-    socket.emit('onlineStatus', {
-        users: onlineUsers // ส่งข้อมูลผู้ใช้ที่ออนไลน์
-    });
+//     // ส่งข้อมูลสถานะออนไลน์เมื่อมีการเชื่อมต่อ
+//     socket.emit('onlineStatus', {
+//         users: onlineUsers // ส่งข้อมูลผู้ใช้ที่ออนไลน์
+//     });
 
-    // ส่งข้อมูลสถานะเซิร์ฟเวอร์
-    const serverStatus = {
-        status: 'OK',
-        uptime: process.uptime(),
-        memoryUsage: process.memoryUsage(),
-        timestamp: new Date().toISOString()
-    };
-    socket.emit('serverStatus', serverStatus);
+//     // ส่งข้อมูลสถานะเซิร์ฟเวอร์
+//     const serverStatus = {
+//         status: 'OK',
+//         uptime: process.uptime(),
+//         memoryUsage: process.memoryUsage(),
+//         timestamp: new Date().toISOString()
+//     };
+//     socket.emit('serverStatus', serverStatus);
 
-    // เมื่อมีการตัดการเชื่อมต่อ
-    socket.on('disconnect', () => {
-    });
-});
+//     // เมื่อมีการตัดการเชื่อมต่อ
+//     socket.on('disconnect', () => {
+//     });
+// });
 
-setInterval(() => {
-    const serverStatus = {
-        status: 'OK',
-        uptime: process.uptime(),
-        memoryUsage: process.memoryUsage(),
-        timestamp: new Date().toISOString()
-    };
-    io.emit('serverStatus', serverStatus); // ส่งข้อมูลสถานะเซิร์ฟเวอร์
-}, 100); // ทุก ๆ 10 วินาที
+// setInterval(() => {
+//     const serverStatus = {
+//         status: 'OK',
+//         uptime: process.uptime(),
+//         memoryUsage: process.memoryUsage(),
+//         timestamp: new Date().toISOString()
+//     };
+//     io.emit('serverStatus', serverStatus); // ส่งข้อมูลสถานะเซิร์ฟเวอร์
+// }, 100); // ทุก ๆ 10 วินาที
 
 // Server
 const PORT = process.env.PORT || 3000;

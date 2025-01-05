@@ -16,16 +16,32 @@ const authenticateToken = async (req, res, next) => {
                 return res.status(401).json({ message: 'Token expired or invalid. Please log in again.' });
             }
 
-            // Get fresh data from database
-            const employee = await prisma.employee.findUnique({
-                where: { employee_id: decoded.employee_id }
-            });
+            let user;
 
-            if (!employee) {
-                throw new AppError('Employee not found', 401);
+            // ตรวจสอบว่าเป็น employee หรือ admin
+            if (decoded.employee_id) {
+                // ถ้าเป็น employee
+                user = await prisma.employee.findUnique({
+                    where: { employee_id: decoded.employee_id }
+                });
+
+                if (!user) {
+                    throw new AppError('Employee not found', 401);
+                }
+            } else if (decoded.admin_id) {
+                // ถ้าเป็น admin
+                user = await prisma.admin.findUnique({
+                    where: { id: decoded.admin_id }
+                });
+
+                if (!user) {
+                    throw new AppError('Admin not found', 401);
+                }
+            } else {
+                return res.status(403).json({ message: 'Invalid user type' });
             }
 
-            req.user = employee;
+            req.user = user; // กำหนด user ใน req
             next();
         });
     } catch (error) {

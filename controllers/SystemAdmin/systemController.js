@@ -4,7 +4,7 @@ const prisma = require('../../config/db');
 const { AppError } = require('../../middleware/errorHandler');
 const { generateAccessToken, generateRefreshToken } = require('../employee/tokenController');
 const onlineStatusService = require('../../services/onlineStatusService');
-const io = require('../../app').io;
+// const io = require('../../app').io;
 
 const authController = {
     // Login

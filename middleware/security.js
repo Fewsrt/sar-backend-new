@@ -5,10 +5,12 @@ const cors = require('cors');
 
 // CORS options
 const corsOptions = {
-  origin: 'http://localhost:8080', // ระบุ origin ที่อนุญาต
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // ระบุ methods ที่อนุญาต
-  allowedHeaders: ['Content-Type', 'Authorization'], // ระบุ headers ที่อนุญาต
-  credentials: true // อนุญาตให้ส่ง cookies
+  origin: ['https://liff.line.me/2006519613-MpmgYvkZ', 'https://fewmanager-8adc1.firebaseapp.com'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // เพิ่ม PATCH ที่นี่
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-line-request'],
+  credentials: true,
+  optionsSuccessStatus: 204,
+  preflightContinue: false
 };
 
 // Security middleware

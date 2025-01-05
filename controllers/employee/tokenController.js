@@ -23,20 +23,33 @@ const refreshAccessToken = async (req, res) => {
 
   try {
     const user = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-    const storedToken = await getRefreshToken(user.employee_code);
+    let storedToken;
 
-    if (!storedToken) {
-      // ถ้าไม่มี Refresh Token ในระบบ ให้แจ้งเตือนให้ผู้ใช้ login ใหม่
-      return res.status(401).json({ error: 'No Refresh Token found. Please log in again.' });
-    }
-
-    if (storedToken.token !== token) {
-      return res.status(403).json({ error: 'Invalid Refresh Token' });
+    // ตรวจสอบว่าเป็นพนักงานหรือแอดมิน
+    if (user.employee_code) {
+      storedToken = await getRefreshToken(user.employee_code);
+      if (!storedToken) {
+        return res.status(401).json({ error: 'No Refresh Token found for employee. Please log in again.' });
+      }
+      if (storedToken.token !== token) {
+        return res.status(403).json({ error: 'Invalid Refresh Token for employee' });
+      }
+    } else if (user.admin_id) {
+      storedToken = await getRefreshToken(null, user.admin_id); // ฟังก์ชันนี้ต้องรองรับการค้นหาตาม admin_id
+      if (!storedToken) {
+        return res.status(401).json({ error: 'No Refresh Token found for admin. Please log in again.' });
+      }
+      if (storedToken.token !== token) {
+        return res.status(403).json({ error: 'Invalid Refresh Token for admin' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Invalid user type' });
     }
 
     // Create new Access Token
     const accessToken = generateAccessToken({
       employee_code: user.employee_code,
+      admin_id: user.admin_id, // เพิ่ม admin_id ถ้ามี
       full_name: user.full_name,
       position: user.position,
       role: user.role
