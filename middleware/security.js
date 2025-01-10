@@ -5,7 +5,7 @@ const cors = require('cors');
 
 // CORS options
 const corsOptions = {
-  origin: ['https://liff.line.me/2006519613-MpmgYvkZ', 'https://fewmanager-8adc1.firebaseapp.com'],
+  origin: ['https://liff.line.me/2006519613-MpmgYvkZ', 'https://fewmanager-8adc1.firebaseapp.com', 'http://localhost:8080'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // เพิ่ม PATCH ที่นี่
   allowedHeaders: ['Content-Type', 'Authorization', 'x-line-request'],
   credentials: true,

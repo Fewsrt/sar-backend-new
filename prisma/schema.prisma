@@ -510,7 +510,7 @@ model bankTransferTracking {
 // Attendance Model
 model attendance {
   attendance_id       Int       @id @default(autoincrement())
-  employee_code       String    // ใ��้ employee_code แน employee_id
+  employee_code       String    // ใ้ employee_code แน employee_id
   check_in_time       DateTime?
   check_out_time      DateTime?
   check_in_latitude   Float?
@@ -578,13 +578,13 @@ model withholdingTaxInvoice {
 
 model RefreshToken {
   id            Int      @id @default(autoincrement())
-  employee_code String?   // ไม่ต้องการ unique constraint
-  admin_id      Int?      // ไม่ต้องการ unique constraint
+  employee_code String?  @unique
+  admin_id      Int?     @unique
   token         String
   createdAt     DateTime @default(now())
 
-  employee      employee? @relation(fields: [employee_code], references: [employee_code]) // สร้าง relation กับ Employee
-  admin         Admin?   @relation(fields: [admin_id], references: [id])
+  employee      employee? @relation(fields: [employee_code], references: [employee_code])
+  admin         Admin?    @relation(fields: [admin_id], references: [id])
 }
 
 model Company {
