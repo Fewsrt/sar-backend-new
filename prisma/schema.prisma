@@ -448,7 +448,7 @@ model customer {
   district_id    Int
   province_id    Int
   postal_code    String?
-  tax_id         String  @unique
+  tax_id         String  
 
   subdistrict subdistrict @relation(fields: [subdistrict_id], references: [id])
   district    district    @relation(fields: [district_id], references: [id])
@@ -608,11 +608,11 @@ model accounting {
 
 // Supplier Model
 model supplier {
-  supplier_id   Int     @id @default(autoincrement())
-  supplier_code String
-  supplier_name String
-  branch_name   String?
-  tax_id        String  @db.VarChar(13)
+  supplier_id    Int     @id @default(autoincrement())
+  supplier_code  String  
+  supplier_name  String?
+  branch_name    String?
+  tax_id         String?  @db.VarChar(13)
 
   purchaseTaxInvoice purchaseTaxInvoice[]
   cars               carAssociatedEntities[] @relation("CarPurchaseFrom")
