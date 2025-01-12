@@ -103,3 +103,122 @@ model FollowUp {
   @@index([customerId])
   @@index([empId])
 }
+
+// ปรับปรุง Car Model
+model car {
+  car_id                    Int             @id @default(autoincrement())
+  car_code                  String          @unique
+  purchase_date             DateTime?
+  status                    carStatus       @default(car_entry)
+  approval_status           Boolean?        @default(false)
+  booked_status             Boolean?        @default(false)
+  payment_status            Boolean?        @default(false)
+  approval_order            Int?
+  payment_order             Int?
+  approval_date             DateTime?
+  booked_date               DateTime?
+  payment_date              DateTime?
+  parking_id                Int
+  parking_location          branch? @relation("ParkingLocation", fields: [parking_id], references: [branch_id])
+  car_tracking              trackingStatus? @default(pending)  // เปลี่ยนเป็น enum
+  purchaseTaxInvoice        purchaseTaxInvoice[]
+  withholding_tax_invoice   withholdingTaxInvoice[]
+  fp_due_date               DateTime?
+  sale_tax_invoice          taxInvoice[]
+  book_close_date           DateTime?
+  tax_invoice_sale_date     DateTime?
+  book_sent_to_bank_date    DateTime?
+  transfer_status           transferStatus? @default(pending)  // เปลี่ยนเป็น enum
+  purchase_from             supplier? @relation("CarPurchaseFrom", fields: [purchase_from_id], references: [supplier_id])
+  purchase_from_id          Int?
+  fp_name                   String?
+  book_record_date          String?
+  financing                 customer? @relation("CarFinancing", fields: [financing_id], references: [customer_id])
+  financing_id              Int?
+  brand_id                  Int
+  model_id                  Int
+  submodel_id               Int
+  license_plate_no          String?
+  license_plate_province    String?
+  new_license_plate_no      String?
+  new_license_plate_province String?
+  color_id                  Int?
+  color                     color?               @relation(fields: [color_id], references: [color_id])
+  registration_date         DateTime?
+  registration_date_year    Int?
+  registration_date_month   Int?
+  registration_date_day     Int?
+  chassis_no                String?
+  engine_no                 String?
+  sale_price                Float?
+  net_cost                  Float?
+  gross_profit              Float?
+  purchase_price            Float?
+  operation_cost            Float?
+  total_purchase_price      Float?
+  remaining_loan            Float?
+  paid_difference           Float?
+  total_income              Float?
+  transfer_finance          Float?
+  car_commission            Float?
+  down_payment              Float?
+  total_revenue             Float?
+  interest_fp               Float?
+  body_repair               Float?
+  service_cost              Float?
+  film_radio                Float?
+  seat_upholstery           Float?
+  tax_transfer              Float?
+  sales_commission          Float?
+  fuel_cost                 Float?
+  referral_fee              Float?
+  trailer_cost              Float?
+  other_expenses            Float?
+  total_expenses            Float?
+  new_tires                 Float?
+  installment_support       Float?
+  cash_back                 Float?
+  other_promotions          String?
+  total_promotion_expenses  Float?
+  final_profit              Float?
+  sale_branch_id            Int?
+  sale_branch               branch? @relation("CarSaleBranch", fields: [sale_branch_id], references: [branch_id])
+  branch_50_percent_id      Int?
+  branch_50_percent         branch? @relation("CarBranch50Percent", fields: [branch_50_percent_id], references: [branch_id])
+  salesperson_id            Int?
+  salesperson               employee?            @relation("CarSalesperson", fields: [salesperson_id], references: [employee_id])
+  approval_amount           Float?
+  car_release_date          DateTime?
+  mileage                   Int?
+  customer_id               Int?
+  customer                  customer? @relation("CarCustomer", fields: [customer_id], references: [customer_id])
+  installment_amount        Float?
+  installment_number        Int?
+  promotion_detail          String?
+  expected_income           Float?
+  expected_profit           Float?
+  tracking_note             String?
+  note                      String?
+  car_image_link            String?
+  created_at                DateTime        @default(now())
+  updated_at                DateTime        @updatedAt
+  deleted_at                DateTime?
+  day                       Int?
+  month                     Int?
+  year                      Int?
+
+  car_brand                 car_brand? @relation(fields: [brand_id], references: [brand_id])
+  car_model                 car_model? @relation(fields: [model_id], references: [model_id])
+  car_submodel              car_submodel? @relation(fields: [submodel_id], references: [submodel_id])
+  reservation            reservation[]
+  sale                   sale[]
+  carInspection          carInspection[]
+  maintenance            maintenance[]
+  accounting             accounting[]
+  customerPurchaseHistory customerPurchaseHistory[]
+  bankTransferTracking   bankTransferTracking[]
+
+  @@index([customer_id])
+  @@index([car_id])
+  @@index([car_code])
+}

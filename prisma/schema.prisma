@@ -9,32 +9,32 @@ datasource db {
 
 // เพิ่ม enum สำหรับสถานะรถ
 enum carStatus {
-  car_entry      // รอรับรถ  
-  inspection     // รอตรวจสอบ
-  maintenance    // ซ่อมบำรุง
-  available      // พร้อมขาย
-  reserved       // จอง
-  approved       // อนุมัติ
-  delivery       // รอส่งรถ
+  car_entry // รอรับรถ  
+  inspection // รอตรวจสอบ
+  maintenance // ซ่อมบำรุง
+  available // พร้อมขาย
+  reserved // จอง
+  approved // อนุมัติ
+  delivery // รอส่งรถ
   payment_received // รอชำระเงิน
-  sold           // ขายแล้ว
-  pending        // รอดำเนินการ
+  sold // ขายแล้ว
+  pending // รอดำเนินการ
 }
 
 // เพิ่ม enum สำหรับสถานะการโอน
 enum transferStatus {
-  pending        // รอดำเนินการ
-  in_progress    // กำลังดำเนินการ
-  completed      // เสร็จสิ้น
-  cancelled      // ยกเลิก
+  pending // รอดำเนินการ
+  in_progress // กำลังดำเนินการ
+  completed // เสร็จสิ้น
+  cancelled // ยกเลิก
 }
 
 // เพิ่ม enum สำหรับการติดตาม
 enum trackingStatus {
-  pending        // รอติดตาม
-  following_up   // กำลังติดตาม
-  completed      // เสร็จสิ้น
-  cancelled      // ยกเลิก
+  pending // รอติดตาม
+  following_up // กำลังติดตาม
+  completed // เสร็จสิ้น
+  cancelled // ยกเลิก
 }
 
 enum role {
@@ -78,11 +78,11 @@ enum transactionType {
 
 model color {
   color_id   Int    @id @default(autoincrement())
-  color_name String  @unique
-  cars       car[]   // ความสัมพันธ์กับโมเดล car
+  color_name String @unique
+  cars       car[] // ความสัมพันธ์กับโมเดล car
 
-  created_at DateTime @default(now())    // วันที่สร้าง
-  updated_at DateTime @updatedAt         // วันที่อัพเดท
+  created_at DateTime @default(now()) // วันที่สร้าง
+  updated_at DateTime @updatedAt // วันที่อัพเดท
 }
 
 model followUp {
@@ -154,158 +154,294 @@ model car_brand {
 
 // car_model Model
 model car_model {
-  model_id     Int         @id @default(autoincrement())
-  model_name   String
-  brand_id     Int
-  car_brand    car_brand   @relation(fields: [brand_id], references: [brand_id])
+  model_id      Int            @id @default(autoincrement())
+  model_name    String
+  brand_id      Int
+  car_brand     car_brand      @relation(fields: [brand_id], references: [brand_id])
   car_submodels car_submodel[]
-  cars         car[]
+  cars          car[]
 }
 
 // car_submodel Model (โฉม)
 model car_submodel {
-  submodel_id    Int            @id @default(autoincrement())
-  submodel_name  String
-  model_id       Int
-  car_model      car_model      @relation(fields: [model_id], references: [model_id])
+  submodel_id           Int                    @id @default(autoincrement())
+  submodel_name         String
+  model_id              Int
+  car_model             car_model              @relation(fields: [model_id], references: [model_id])
   car_submodel_variants car_submodel_variant[]
-  cars           car[]
+  cars                  car[]
 }
 
 // submodel_variant Model (รุ่นย่อย)
 model car_submodel_variant {
-  variant_id     Int               @id @default(autoincrement())
-  variant_name   String
-  submodel_id    Int
-  car_submodel   car_submodel      @relation(fields: [submodel_id], references: [submodel_id])
+  variant_id   Int          @id @default(autoincrement())
+  variant_name String
+  submodel_id  Int
+  car_submodel car_submodel @relation(fields: [submodel_id], references: [submodel_id])
 }
 
-// ปรับปรุง Car Model
+// หมวดหมู่ข้อมูลพื้นฐานของรถ
 model car {
-  car_id                    Int             @id @default(autoincrement())
-  car_code                  String          @unique
-  purchase_date             DateTime?
-  status                    carStatus       @default(car_entry)
-  approval_status           Boolean?        @default(false)
-  booked_status             Boolean?        @default(false)
-  payment_status            Boolean?        @default(false)
-  approval_order            Int?
-  payment_order             Int?
-  approval_date             DateTime?
-  booked_date               DateTime?
-  payment_date              DateTime?
-  parking_id                Int
-  parking_location          branch? @relation("ParkingLocation", fields: [parking_id], references: [branch_id])
-  car_tracking              trackingStatus? @default(pending)  // เปลี่ยนเป็น enum
-  purchaseTaxInvoice        purchaseTaxInvoice[]
-  withholding_tax_invoice   withholdingTaxInvoice[]
-  fp_due_date               DateTime?
-  sale_tax_invoice          taxInvoice[]
-  book_close_date           DateTime?
-  tax_invoice_sale_date     DateTime?
-  book_sent_to_bank_date    DateTime?
-  transfer_status           transferStatus? @default(pending)  // เปลี่ยนเป็น enum
-  purchase_from             supplier? @relation("CarPurchaseFrom", fields: [purchase_from_id], references: [supplier_id])
-  purchase_from_id          Int?
-  fp_name                   String?
-  book_record_date          String?
-  financing                 customer? @relation("CarFinancing", fields: [financing_id], references: [customer_id])
-  financing_id              Int?
-  brand_id                  Int
-  model_id                  Int
-  submodel_id               Int
-  license_plate_no          String?
-  license_plate_province    String?
-  new_license_plate_no      String?
+  car_id                     Int             @id @default(autoincrement())
+  car_code                   String          @unique
+  status                     carStatus       @default(car_entry)
+  car_tracking               trackingStatus? @default(pending) // enum
+  purchase_date              DateTime?
+  license_plate_no           String?
+  license_plate_province     String?
+  new_license_plate_no       String?
   new_license_plate_province String?
-  color_id                  Int?
-  color                     color?               @relation(fields: [color_id], references: [color_id])
-  registration_date         DateTime?
-  registration_date_year    Int?
-  registration_date_month   Int?
-  registration_date_day     Int?
-  chassis_no                String?
-  engine_no                 String?
-  sale_price                Float?
-  net_cost                  Float?
-  gross_profit              Float?
-  purchase_price            Float?
-  operation_cost            Float?
-  total_purchase_price      Float?
-  remaining_loan            Float?
-  paid_difference           Float?
-  total_income              Float?
-  transfer_finance          Float?
-  car_commission            Float?
-  down_payment              Float?
-  total_revenue             Float?
-  interest_fp               Float?
-  body_repair               Float?
-  service_cost              Float?
-  film_radio                Float?
-  seat_upholstery           Float?
-  tax_transfer              Float?
-  sales_commission          Float?
-  fuel_cost                 Float?
-  referral_fee              Float?
-  trailer_cost              Float?
-  other_expenses            Float?
-  total_expenses            Float?
-  new_tires                 Float?
-  installment_support       Float?
-  cash_back                 Float?
-  other_promotions          String?
-  total_promotion_expenses  Float?
-  final_profit              Float?
-  sale_branch_id            Int?
-  sale_branch               branch? @relation("CarSaleBranch", fields: [sale_branch_id], references: [branch_id])
-  branch_50_percent_id      Int?
-  branch_50_percent         branch? @relation("CarBranch50Percent", fields: [branch_50_percent_id], references: [branch_id])
-  salesperson_id            Int?
-  salesperson               employee?            @relation("CarSalesperson", fields: [salesperson_id], references: [employee_id])
-  approval_amount           Float?
-  car_release_date          DateTime?
-  mileage                   Int?
-  customer_id               Int?
-  customer                  customer? @relation("CarCustomer", fields: [customer_id], references: [customer_id])
-  installment_amount        Float?
-  installment_number        Int?
-  promotion_detail          String?
-  expected_income           Float?
-  expected_profit           Float?
-  tracking_note             String?
-  note                      String?
-  car_image_link            String?
-  created_at                DateTime        @default(now())
-  updated_at                DateTime        @updatedAt
-  deleted_at                DateTime?
-  day                       Int?
-  month                     Int?
-  year                      Int?
+  color_id                   Int?
+  color                      color?          @relation(fields: [color_id], references: [color_id])
+  chassis_no                 String?
+  engine_no                  String?
+  brand_id                   Int
+  model_id                   Int
+  submodel_id                Int
+  mileage                    Int?
+  registration_date          DateTime?
+  registration_date_year     Int?
+  registration_date_month    Int?
+  registration_date_day      Int?
+  day              Int?
+  month            Int?
+  year             Int?
 
-  car_brand                 car_brand? @relation(fields: [brand_id], references: [brand_id])
-  car_model                 car_model? @relation(fields: [model_id], references: [model_id])
-  car_submodel              car_submodel? @relation(fields: [submodel_id], references: [submodel_id])
-  reservation            reservation[]
-  sale                   sale[]
-  carInspection          carInspection[]
-  maintenance            maintenance[]
-  accounting             accounting[]
+  // Relation
+  financialDetails   carFinancialDetails[]
+  expenseDetails     carExpenseDetails[]
+  approvalDetails    carApprovalDetails[]
+  locationDetails    carLocationDetails[]
+  taxDetails         carTaxDetails[]
+  documentTracking   carDocumentTracking[]
+  associatedEntities carAssociatedEntities[]
+  generalInfo        carGeneralInfo[]
+  car_brand          car_brand?              @relation(fields: [brand_id], references: [brand_id])
+  car_model          car_model?              @relation(fields: [model_id], references: [model_id])
+  car_submodel       car_submodel?           @relation(fields: [submodel_id], references: [submodel_id])
+
+  created_at              DateTime                  @default(now())
+  updated_at              DateTime                  @updatedAt
+  deleted_at              DateTime?
+  reservation             reservation[]
+  sale                    sale[]
+  carInspection           carInspection[]
+  maintenance             maintenance[]
+  accounting              accounting[]
   customerPurchaseHistory customerPurchaseHistory[]
-  bankTransferTracking   bankTransferTracking[]
+  bankTransferTracking    bankTransferTracking[]
 
-  @@index([customer_id])
   @@index([car_id])
   @@index([car_code])
 }
 
+// หมวดหมู่ข้อมูลด้านการเงินและการซื้อ-ขาย
+model carFinancialDetails {
+  id                   Int    @id @default(autoincrement())
+  car_id               Int
+  sale_price           Float?
+  net_cost             Float?
+  gross_profit         Float?
+  purchase_price       Float?
+  operation_cost       Float?
+  total_purchase_price Float?
+  remaining_loan       Float?
+  paid_difference      Float?
+  total_income         Float?
+  transfer_finance     Float?
+  car_commission       Float?
+  down_payment         Float?
+  total_revenue        Float?
+  approval_amount      Float?
+  expected_income      Float?
+  expected_profit      Float?
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+// หมวดหมู่ค่าใช้จ่ายและโปรโมชั่น
+model carExpenseDetails {
+  id                       Int     @id @default(autoincrement())
+  car_id                   Int
+  interest_fp              Float?
+  body_repair              Float?
+  service_cost             Float?
+  film_radio               Float?
+  seat_upholstery          Float?
+  tax_transfer             Float?
+  sales_commission         Float?
+  fuel_cost                Float?
+  referral_fee             Float?
+  trailer_cost             Float?
+  other_expenses           Float?
+  new_tires                Float?
+  installment_support      Float?
+  cash_back                Float?
+  other_promotions         String?
+  total_promotion_expenses Float?
+  final_profit             Float?
+  total_expenses            Float?
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+// หมวดหมู่สถานะการอนุมัติและการจอง
+model carApprovalDetails {
+  id              Int       @id @default(autoincrement())
+  car_id          Int
+  approval_status Boolean?  @default(false)
+  booked_status   Boolean?  @default(false)
+  payment_status  Boolean?  @default(false)
+  approval_order  Int?
+  payment_order   Int?
+  approval_date   DateTime?
+  booked_date     DateTime?
+  payment_date    DateTime?
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+// หมวดหมู่ข้อมูลที่เกี่ยวข้องกับสถานที่และการจัดเก็บ
+model carLocationDetails {
+  id                   Int     @id @default(autoincrement())
+  car_id               Int
+  parking_id           Int
+  parking_location     branch? @relation("ParkingLocation", fields: [parking_id], references: [branch_id])
+  sale_branch_id       Int?
+  sale_branch          branch? @relation("CarSaleBranch", fields: [sale_branch_id], references: [branch_id])
+  branch_50_percent_id Int?
+  branch_50_percent    branch? @relation("CarBranch50Percent", fields: [branch_50_percent_id], references: [branch_id])
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+// หมวดหมู่การจัดการภาษี
+model carTaxDetails {
+  id                    Int       @id @default(autoincrement())
+  car_id                Int
+  tax_invoice_sale_date DateTime?
+  car                   car       @relation(fields: [car_id], references: [car_id])
+
+  // สร้าง junction tables สำหรับ many-to-many relations
+  purchase_tax_invoices    CarPurchaseTaxInvoice[]
+  withholding_tax_invoices CarWithholdingTaxInvoice[]
+  sale_tax_invoices        CarSaleTaxInvoice[]
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+// Junction table สำหรับ carTaxDetails และ purchaseTaxInvoice
+model CarPurchaseTaxInvoice {
+  car_tax_details_id  Int
+  purchase_invoice_id Int
+  carTaxDetails       carTaxDetails      @relation(fields: [car_tax_details_id], references: [id])
+  purchaseTaxInvoice  purchaseTaxInvoice @relation(fields: [purchase_invoice_id], references: [purchase_invoice_id])
+
+  @@id([car_tax_details_id, purchase_invoice_id])
+}
+
+// Junction table สำหรับ carTaxDetails และ withholdingTaxInvoice
+model CarWithholdingTaxInvoice {
+  car_tax_details_id     Int
+  withholding_invoice_id Int
+  carTaxDetails          carTaxDetails         @relation(fields: [car_tax_details_id], references: [id])
+  withholdingTaxInvoice  withholdingTaxInvoice @relation(fields: [withholding_invoice_id], references: [withholding_invoice_id])
+
+  @@id([car_tax_details_id, withholding_invoice_id])
+}
+
+// Junction table สำหรับ carTaxDetails และ taxInvoice
+model CarSaleTaxInvoice {
+  car_tax_details_id Int
+  invoice_id         Int
+  carTaxDetails      carTaxDetails @relation(fields: [car_tax_details_id], references: [id])
+  taxInvoice         taxInvoice    @relation(fields: [invoice_id], references: [invoice_id])
+
+  @@id([car_tax_details_id, invoice_id])
+}
+
+// หมวดหมู่การติดตามเอกสารและการจัดการทางการเงิน
+model carDocumentTracking {
+  id                     Int             @id @default(autoincrement())
+  car_id                 Int
+  fp_due_date            DateTime?
+  book_close_date        DateTime?
+  book_sent_to_bank_date DateTime?
+  transfer_status        transferStatus? @default(pending) // enum
+  book_record            String?
+  installment_amount     Float?
+  installment_number     Int?
+  financing              customer?       @relation("CarFinancing", fields: [financing_id], references: [customer_id])
+  financing_id           Int?
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+// หมวดหมู่ผู้เกี่ยวข้อง
+model carAssociatedEntities {
+  id               Int       @id @default(autoincrement())
+  car_id           Int
+  purchase_from    supplier? @relation("CarPurchaseFrom", fields: [purchase_from_id], references: [supplier_id])
+  purchase_from_id Int?
+  customer_id      Int?
+  customer         customer? @relation("CarCustomer", fields: [customer_id], references: [customer_id])
+  salesperson_id   Int?
+  salesperson      employee? @relation("CarSalesperson", fields: [salesperson_id], references: [employee_id])
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+// หมวดหมู่ข้อมูลทั่วไป
+model carGeneralInfo {
+  id               Int       @id @default(autoincrement())
+  car_id           Int
+  fp_name          String?
+  promotion_detail String?
+  tracking_note    String?
+  note             String?
+  car_image_link   String?
+  car_release_date DateTime?
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
 // Customer Model
 model customer {
-  customer_id    Int  @id @default(autoincrement())
+  customer_id    Int     @id @default(autoincrement())
   customer_code  String  @unique
   name           String
   branch         String?
-  phone          String?  @unique
+  phone          String? @unique
   email          String? @unique
   address        String?
   subdistrict_id Int
@@ -321,10 +457,10 @@ model customer {
   reservation             reservation[]
   sale                    sale[]
   followUp                followUp[]
-  car                     car[] @relation("CarCustomer")
+  carAssociatedEntities   carAssociatedEntities[]   @relation("CarCustomer")
   customerPurchaseHistory customerPurchaseHistory[]
   taxInvoice              taxInvoice[]
-  financing               car[] @relation("CarFinancing")
+  financing               carDocumentTracking[]     @relation("CarFinancing")
 }
 
 // Reservation Model
@@ -358,35 +494,35 @@ model sale {
 
 // Employee Model
 model employee {
-  employee_id       Int     @id @default(autoincrement()) // เปลี่ยนเป็น String
-  employee_code     String     @unique
+  employee_id       Int            @id @default(autoincrement()) // เปลี่ยนเป็น String
+  employee_code     String         @unique
   title             String?
   full_name         String
   nickname          String?
   position          String
   branch_id         Int
-  phone             String     @unique
-  email             String     @unique
+  phone             String         @unique
+  email             String         @unique
   password          String
   profile_picture   String?
   employment_status employeeStatus @default(active)
-  employee_card     empCardStatus @default(yes)
+  employee_card     empCardStatus  @default(yes)
   line_uuid         String?
-  isFirstLogin      Boolean    @default(true)
-  role              role       @default(user) // บทบาทของผู้ใช้งาน
-  followUps         followUp[] @relation("EmployeeFollowUps")
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  isFirstLogin      Boolean        @default(true)
+  role              role           @default(user) // บทบาทของผู้ใช้งาน
+  followUps         followUp[]     @relation("EmployeeFollowUps")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  branch        branch          @relation(fields: [branch_id], references: [branch_id])
-  sale          sale[]
-  maintenance   maintenance[]
-  carInspection carInspection[]
-  car           car[] @relation("CarSalesperson")
-  attendance    attendance[]
-  system_logs SystemLog[]
+  branch                branch                  @relation(fields: [branch_id], references: [branch_id])
+  sale                  sale[]
+  maintenance           maintenance[]
+  carInspection         carInspection[]
+  carAssociatedEntities carAssociatedEntities[] @relation("CarSalesperson")
+  attendance            attendance[]
+  system_logs           SystemLog[]
 
-  refreshTokens  RefreshToken?
+  refreshTokens RefreshToken?
 
   @@index([email])
 }
@@ -421,10 +557,10 @@ model branch {
   sale         sale[]
   accounting   accounting[]
   liveSchedule liveSchedule[]
-  
-  cars         car[] @relation("ParkingLocation")
-  cars_50_percent car[] @relation("CarBranch50Percent")
-  sale_branch car[] @relation("CarSaleBranch")
+
+  cars            carLocationDetails[] @relation("ParkingLocation")
+  cars_50_percent carLocationDetails[] @relation("CarBranch50Percent")
+  sale_branch     carLocationDetails[] @relation("CarSaleBranch")
 }
 
 // CarInspection Model
@@ -472,14 +608,14 @@ model accounting {
 
 // Supplier Model
 model supplier {
-  supplier_id    Int     @id @default(autoincrement())
-  supplier_code  String  
-  supplier_name  String
-  branch_name    String?
-  tax_id         String  @db.VarChar(13)
+  supplier_id   Int     @id @default(autoincrement())
+  supplier_code String
+  supplier_name String
+  branch_name   String?
+  tax_id        String  @db.VarChar(13)
 
   purchaseTaxInvoice purchaseTaxInvoice[]
-  cars               car[] @relation("CarPurchaseFrom")
+  cars               carAssociatedEntities[] @relation("CarPurchaseFrom")
 }
 
 // CustomerPurchaseHistory Model
@@ -509,8 +645,8 @@ model bankTransferTracking {
 
 // Attendance Model
 model attendance {
-  attendance_id       Int       @id @default(autoincrement())
-  employee_code       String    // ใ��้ employee_code แน employee_id
+  attendance_id       Int              @id @default(autoincrement())
+  employee_code       String // ใ้ employee_code แน employee_id
   check_in_time       DateTime?
   check_out_time      DateTime?
   check_in_latitude   Float?
@@ -520,7 +656,7 @@ model attendance {
   status              attendanceStatus
   note                String?
 
-  employee            employee  @relation(fields: [employee_code], references: [employee_code])
+  employee employee @relation(fields: [employee_code], references: [employee_code])
 }
 
 // LiveSchedule Model
@@ -538,7 +674,6 @@ model liveSchedule {
 // TaxInvoice Model
 model taxInvoice {
   invoice_id            Int      @id @default(autoincrement())
-  car_id                Int
   invoice_date          DateTime
   customer_id           Int
   sale_price_before_vat Float?
@@ -546,14 +681,13 @@ model taxInvoice {
   sale_price_incl_vat   Float?
   invoice_type          String
 
-  car      car      @relation(fields: [car_id], references: [car_id])
-  customer customer @relation(fields: [customer_id], references: [customer_id])
+  customer      customer            @relation(fields: [customer_id], references: [customer_id])
+  carTaxDetails CarSaleTaxInvoice[]
 }
 
 // PurchaseTaxInvoice Model
 model purchaseTaxInvoice {
   purchase_invoice_id           Int      @id @default(autoincrement())
-  car_id                        Int
   invoice_date                  DateTime
   invoice_number                String   @unique
   supplier_id                   Int
@@ -562,29 +696,28 @@ model purchaseTaxInvoice {
   product_value_incl_operations Float?
   no_vat                        Boolean
 
-  car      car      @relation(fields: [car_id], references: [car_id])
-  supplier supplier @relation(fields: [supplier_id], references: [supplier_id])
+  supplier      supplier                @relation(fields: [supplier_id], references: [supplier_id])
+  carTaxDetails CarPurchaseTaxInvoice[]
 }
 
 model withholdingTaxInvoice {
-  withholding_invoice_id           Int      @id @default(autoincrement())
-  car_id                        Int
-  invoice_date                  DateTime
-  invoice_number                String   @unique
-  vat_3_percent                 Float?
+  withholding_invoice_id Int      @id @default(autoincrement())
+  invoice_date           DateTime
+  invoice_number         String   @unique
+  vat_3_percent          Float?
 
-  car      car      @relation(fields: [car_id], references: [car_id])
+  carTaxDetails CarWithholdingTaxInvoice[]
 }
 
 model RefreshToken {
   id            Int      @id @default(autoincrement())
-  employee_code String?   // ไม่ต้องการ unique constraint
-  admin_id      Int?      // ไม่ต้องการ unique constraint
+  employee_code String?  @unique
+  admin_id      Int?     @unique
   token         String
   createdAt     DateTime @default(now())
 
-  employee      employee? @relation(fields: [employee_code], references: [employee_code]) // สร้าง relation กับ Employee
-  admin         Admin?   @relation(fields: [admin_id], references: [id])
+  employee employee? @relation(fields: [employee_code], references: [employee_code]) // สร้าง relation กับ Employee
+  admin    Admin?    @relation(fields: [admin_id], references: [id])
 }
 
 model Company {
@@ -592,48 +725,48 @@ model Company {
   company_code   String   @unique
   company_name   String
   contact_person String
-  phone         String
-  email         String
-  status        Boolean  @default(true)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  admins        Admin[]  // Relation to Admin
+  phone          String
+  email          String
+  status         Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  admins         Admin[] // Relation to Admin
 
   @@map("companies")
 }
 
 model Admin {
-  id         Int       @id @default(autoincrement())
-  username   String    @unique
-  password   String
-  name       String
-  email      String    @unique
-  role       AdminRole @default(admin)
-  status     Boolean   @default(true)
-  last_login DateTime?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  company    Company?  @relation(fields: [company_id], references: [id])
-  company_id Int?
-  system_logs SystemLog[]
-  refreshTokens  RefreshToken?
+  id            Int           @id @default(autoincrement())
+  username      String        @unique
+  password      String
+  name          String
+  email         String        @unique
+  role          AdminRole     @default(admin)
+  status        Boolean       @default(true)
+  last_login    DateTime?
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  company       Company?      @relation(fields: [company_id], references: [id])
+  company_id    Int?
+  system_logs   SystemLog[]
+  refreshTokens RefreshToken?
 
   @@map("admins")
 }
 
 model SystemLog {
-  id         Int      @id @default(autoincrement())
-  timestamp  DateTime @default(now())
-  level      LogLevel
-  type       String
-  user_id    Int?
+  id          Int       @id @default(autoincrement())
+  timestamp   DateTime  @default(now())
+  level       LogLevel
+  type        String
+  user_id     Int?
   employee_id Int?
-  action     String
-  details    Json?
-  ip         String
-  user_agent String?
-  admin      Admin?   @relation(fields: [user_id], references: [id])
-  employee   employee? @relation(fields: [employee_id], references: [employee_id])
+  action      String
+  details     Json?
+  ip          String
+  user_agent  String?
+  admin       Admin?    @relation(fields: [user_id], references: [id])
+  employee    employee? @relation(fields: [employee_id], references: [employee_id])
 
   @@map("system_logs")
 }
