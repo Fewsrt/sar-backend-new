@@ -110,23 +110,23 @@ const createCustomer = async ({ name, branch, phone, email, address, subdistrict
 };
 
 // Update customer by ID
-const updateCustomer = async (customerId, { name, branch, phone, email, address, subdistrict_id, district_id, province_id, postal_code, tax_id, customer_code }) => {
-    return await prisma.customer.update({
-        where: { customer_id: customerId },
-        data: {
-            name,
-            branch,
-            phone,
-            email,
-            address,
-            subdistrict_id,
-            district_id,
-            province_id,
-            postal_code,
-            tax_id,
-            customer_code,
-        },
-    });
+const updateCustomer = async (id, updateData) => {
+    try {
+        return await prisma.customer.update({
+            where: {
+                customer_id: id
+            },
+            data: updateData,
+            include: {
+                subdistrict: true,
+                district: true,
+                province: true
+            }
+        });
+    } catch (error) {
+        console.error('Error in updateCustomer model:', error);
+        throw error; // ส่ง error ไปให้ controller จัดการ
+    }
 };
 
 // Delete customer by ID

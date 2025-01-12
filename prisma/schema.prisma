@@ -189,14 +189,14 @@ model car {
   approval_status           Boolean?        @default(false)
   booked_status             Boolean?        @default(false)
   payment_status            Boolean?        @default(false)
-  approval_order            Int?
-  payment_order             Int?
+  approval_order            String?
+  payment_order             String?
   approval_date             DateTime?
   booked_date               DateTime?
   payment_date              DateTime?
-  parking_id                Int
+  parking_id                Int?
   parking_location          branch? @relation("ParkingLocation", fields: [parking_id], references: [branch_id])
-  car_tracking              trackingStatus? @default(pending)  // เปลี่ยนเป็น enum
+  car_tracking              String?
   purchaseTaxInvoice        purchaseTaxInvoice[]
   withholding_tax_invoice   withholdingTaxInvoice[]
   fp_due_date               DateTime?
@@ -204,11 +204,11 @@ model car {
   book_close_date           DateTime?
   tax_invoice_sale_date     DateTime?
   book_sent_to_bank_date    DateTime?
-  transfer_status           transferStatus? @default(pending)  // เปลี่ยนเป็น enum
+  transfer_status           String?
   purchase_from             supplier? @relation("CarPurchaseFrom", fields: [purchase_from_id], references: [supplier_id])
   purchase_from_id          Int?
   fp_name                   String?
-  book_record_date          String?
+  book_record         String?
   financing                 customer? @relation("CarFinancing", fields: [financing_id], references: [customer_id])
   financing_id              Int?
   brand_id                  Int
@@ -305,14 +305,14 @@ model customer {
   customer_code  String  @unique
   name           String
   branch         String?
-  phone          String?  @unique
-  email          String? @unique
+  phone          String?  
+  email          String? 
   address        String?
   subdistrict_id Int
   district_id    Int
   province_id    Int
   postal_code    String?
-  tax_id         String  @unique
+  tax_id         String  
 
   subdistrict subdistrict @relation(fields: [subdistrict_id], references: [id])
   district    district    @relation(fields: [district_id], references: [id])
@@ -474,9 +474,9 @@ model accounting {
 model supplier {
   supplier_id    Int     @id @default(autoincrement())
   supplier_code  String  
-  supplier_name  String
+  supplier_name  String?
   branch_name    String?
-  tax_id         String  @db.VarChar(13)
+  tax_id         String?  @db.VarChar(13)
 
   purchaseTaxInvoice purchaseTaxInvoice[]
   cars               car[] @relation("CarPurchaseFrom")
@@ -510,7 +510,7 @@ model bankTransferTracking {
 // Attendance Model
 model attendance {
   attendance_id       Int       @id @default(autoincrement())
-  employee_code       String    // ใ��้ employee_code แน employee_id
+  employee_code       String    // ใ้ employee_code แน employee_id
   check_in_time       DateTime?
   check_out_time      DateTime?
   check_in_latitude   Float?
@@ -578,13 +578,13 @@ model withholdingTaxInvoice {
 
 model RefreshToken {
   id            Int      @id @default(autoincrement())
-  employee_code String?   // ไม่ต้องการ unique constraint
-  admin_id      Int?      // ไม่ต้องการ unique constraint
+  employee_code String?  @unique
+  admin_id      Int?     @unique
   token         String
   createdAt     DateTime @default(now())
 
-  employee      employee? @relation(fields: [employee_code], references: [employee_code]) // สร้าง relation กับ Employee
-  admin         Admin?   @relation(fields: [admin_id], references: [id])
+  employee      employee? @relation(fields: [employee_code], references: [employee_code])
+  admin         Admin?    @relation(fields: [admin_id], references: [id])
 }
 
 model Company {
