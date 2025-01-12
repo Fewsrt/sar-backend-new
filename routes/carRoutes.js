@@ -10,7 +10,7 @@ router
 router
   .route('/:car_id')
   .get(asyncHandler(carController.getCar))
-  .put(asyncHandler(carController.updateCar))
+  .patch(asyncHandler(carController.updateCar))
   .delete(asyncHandler(carController.deleteCar));
 
 router

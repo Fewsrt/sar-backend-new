@@ -14,14 +14,27 @@ const getCustomers = async (req, res) => {
 const getCustomerById = async (req, res) => {
     const { customerId } = req.params;
     try {
-        const customer = await customerModel.getCustomerById(customerId);
+        // แปลง customerId เป็น integer
+        const id = parseInt(customerId);
+        
+        // เพิ่ม include เพื่อดึงข้อมูลที่เกี่ยวข้อง
+        const customer = await customerModel.getCustomerById(id);
+        
+        // ตรวจสอบว่าพบข้อมูลหรือไม่
         if (!customer) {
-            res.status(404).json({ error: 'Customer not found' });
-        } else {
-            res.json(customer);
+            return res.status(404).json({ 
+                error: 'Customer not found',
+                message: `ไม่พบข้อมูลลูกค้ารหัส ${id}`
+            });
         }
+
+        res.json(customer);
+        
     } catch (error) {
-        res.status(500).json({ error: 'Unable to fetch customer' });
+        res.status(500).json({ 
+            error: 'Unable to fetch customer',
+            message: 'เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้า'
+        });
     }
 };
 
@@ -52,24 +65,51 @@ const createCustomer = async (req, res) => {
 // Update customer by ID
 const updateCustomer = async (req, res) => {
     const { customerId } = req.params;
-    const { name, branch, phone, email, address, subdistrict_id, district_id, province_id, postal_code, tax_id, customer_code } = req.body;
+    const updateData = req.body;
+    
     try {
-        const updatedCustomer = await customerModel.updateCustomer(customerId, {
-            name,
-            branch,
-            phone,
-            email,
-            address,
-            subdistrict_id,
-            district_id,
-            province_id,
-            postal_code,
-            tax_id,
-            customer_code
-        });
+        // แปลง customerId เป็น integer
+        const id = parseInt(customerId);
+
+        // ตรวจสอบว่ามี customer อยู่หรือไม่
+        const existingCustomer = await customerModel.getCustomerById(id);
+        if (!existingCustomer) {
+            return res.status(404).json({
+                error: 'Customer not found',
+                message: `ไม่พบข้อมูลลูกค้ารหัส ${id}`
+            });
+        }
+
+        // อัพเดทข้อมูล
+        const updatedCustomer = await customerModel.updateCustomer(id, updateData);
+        
         res.json(updatedCustomer);
+
     } catch (error) {
-        res.status(500).json({ error: 'Unable to update customer' });
+        
+        // จัดการ error กรณี unique constraint violation
+        if (error.code === 'P2002') {
+            return res.status(400).json({
+                error: 'Duplicate value',
+                message: `ค่า ${error.meta.target[0]} นี้มีอยู่ในระบบแล้ว`,
+                field: error.meta.target[0]
+            });
+        }
+
+        // จัดการ error กรณี foreign key constraint violation
+        if (error.code === 'P2003') {
+            return res.status(400).json({
+                error: 'Invalid reference',
+                message: 'ข้อมูลอ้างอิงไม่ถูกต้อง (เช่น subdistrict_id, district_id, province_id)',
+                field: error.meta.field_name
+            });
+        }
+
+        res.status(500).json({
+            error: 'Unable to update customer',
+            message: 'เกิดข้อผิดพลาดในการอัพเดทข้อมูลลูกค้า',
+            details: error.message
+        });
     }
 };
 
