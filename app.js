@@ -6,6 +6,7 @@ const Sentry = require("@sentry/node");
 const figlet = require('figlet');
 const swaggerUi = require('swagger-ui-express');
 const http = require('http');
+const os = require('os');
 // const createSocketServer = require('./config/socketConfig');
 
 // Import middlewares
@@ -119,7 +120,26 @@ const onlineStatusService = require('./services/onlineStatusService');
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
-  
+
+  // Get the network interfaces
+  const networkInterfaces = os.networkInterfaces();
+  let serverIP = '';
+
+  // Loop through the network interfaces to find the IP address
+  for (const interface in networkInterfaces) {
+    for (const address of networkInterfaces[interface]) {
+      // Check if the address is IPv4 and not a loopback address
+      if (address.family === 'IPv4' && !address.internal) {
+        serverIP = address.address;
+        break;
+      }
+    }
+    if (serverIP) break; // Exit the loop if IP is found
+  }
+
+  // Log the server IP address
+  logger.info(`Server IP address: ${serverIP}`);
+
   // ASCII art banner
   figlet('SAR Backend API!', function(err, data) {
     if (err) {

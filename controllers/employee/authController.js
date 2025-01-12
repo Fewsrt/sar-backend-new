@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { findEmployeeByEmail } = require('../../models/employee');
 const { generateAccessToken, generateRefreshToken } = require('./tokenController');
-const { storeRefreshToken } = require('../../models/userModel');
+const { storeRefreshToken, getRefreshToken } = require('../../models/userModel');
 const prisma = require('../../config/db');
 const onlineStatusService = require('../../services/onlineStatusService');
 
