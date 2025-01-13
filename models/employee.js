@@ -11,7 +11,7 @@ const getEmployees = async () => {
       sale: true,
       maintenance: true,
       carInspection: true,
-      car: true,
+      carAssociatedEntities: true,
       attendance: true,
     },
   });
@@ -27,7 +27,7 @@ const getEmployeeById = async (employeeId) => {
       sale: true,
       maintenance: true,
       carInspection: true,
-      car: true,
+      carAssociatedEntities: true,
       attendance: true,
     },
   });

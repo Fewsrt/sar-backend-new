@@ -16,50 +16,80 @@ const generateRefreshToken = (user) => {
 
 // Refresh Access Token
 const refreshAccessToken = async (req, res) => {
-  const { token } = req.body;
-  if (!token) {
-    return res.status(401).json({ error: 'Refresh Token is required' });
-  }
-
-  try {
-    const user = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-    let storedToken;
-
-    // ตรวจสอบว่าเป็นพนักงานหรือแอดมิน
-    if (user.employee_code) {
-      storedToken = await getRefreshToken(user.employee_code);
-      if (!storedToken) {
-        return res.status(401).json({ error: 'No Refresh Token found for employee. Please log in again.' });
-      }
-      if (storedToken.token !== token) {
-        return res.status(403).json({ error: 'Invalid Refresh Token for employee' });
-      }
-    } else if (user.admin_id) {
-      storedToken = await getRefreshToken(null, user.admin_id); // ฟังก์ชันนี้ต้องรองรับการค้นหาตาม admin_id
-      if (!storedToken) {
-        return res.status(401).json({ error: 'No Refresh Token found for admin. Please log in again.' });
-      }
-      if (storedToken.token !== token) {
-        return res.status(403).json({ error: 'Invalid Refresh Token for admin' });
-      }
-    } else {
-      return res.status(403).json({ error: 'Invalid user type' });
+    const { token } = req.body;
+    
+    if (!token) {
+        return res.status(401).json({ 
+            success: false,
+            message: 'Refresh Token is required' 
+        });
     }
 
-    // Create new Access Token
-    const accessToken = generateAccessToken({
-      employee_code: user.employee_code,
-      admin_id: user.admin_id, // เพิ่ม admin_id ถ้ามี
-      full_name: user.full_name,
-      position: user.position,
-      role: user.role
-    });
+    try {
+        // ตรวจสอบ refresh token
+        const user = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+        let storedToken;
 
-    res.json({ accessToken });
-  } catch (err) {
-    console.error('Error while refreshing access token:', err);
-    return res.status(403).json({ error: 'Invalid Refresh Token' });
-  }
+        // ตรวจสอบว่าเป็นพนักงานหรือแอดมิน
+        if (user.employee_code) {
+            storedToken = await getRefreshToken(user.employee_code);
+            if (!storedToken) {
+                return res.status(401).json({ 
+                    success: false,
+                    message: 'No Refresh Token found for employee. Please log in again.' 
+                });
+            }
+            if (storedToken.token !== token) {
+                return res.status(403).json({ 
+                    success: false,
+                    message: 'Invalid Refresh Token for employee' 
+                });
+            }
+        } else if (user.admin_id) {
+            storedToken = await getRefreshToken(null, user.admin_id);
+            if (!storedToken) {
+                return res.status(401).json({ 
+                    success: false,
+                    message: 'No Refresh Token found for admin. Please log in again.' 
+                });
+            }
+            if (storedToken.token !== token) {
+                return res.status(403).json({ 
+                    success: false,
+                    message: 'Invalid Refresh Token for admin' 
+                });
+            }
+        } else {
+            return res.status(403).json({ 
+                success: false,
+                message: 'Invalid user type' 
+            });
+        }
+
+        // สร้าง access token ใหม่
+        const accessToken = jwt.sign({
+            employee_code: user.employee_code,
+            admin_id: user.admin_id,
+            full_name: user.full_name,
+            position: user.position,
+            role: user.role
+        }, process.env.ACCESS_TOKEN_SECRET, { 
+            expiresIn: '12h' 
+        });
+
+        res.json({ 
+            success: true,
+            accessToken 
+        });
+
+    } catch (err) {
+        console.error('Error while refreshing access token:', err);
+        return res.status(403).json({ 
+            success: false,
+            message: 'Invalid Refresh Token',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
+    }
 };
 
 

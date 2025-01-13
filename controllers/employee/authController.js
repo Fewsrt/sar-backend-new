@@ -164,31 +164,42 @@ const renewAccessToken = async (req, res) => {
             where: { employee_code: decoded.employee_code }
         });
 
-        if (!employee) {
+        // Check for superadmin
+        const admin = await prisma.admin.findUnique({
+            where: { username: decoded.employee_code }
+        });
+
+        if (!employee && !admin) {
             return res.status(404).json({
                 success: false,
-                message: 'Employee not found'
+                message: 'Employee or Admin not found'
             });
         }
 
         // Generate new access token
         const newAccessToken = generateAccessToken({
-            employee_id: employee.employee_id,
-            employee_code: employee.employee_code,
-            full_name: employee.full_name,
-            position: employee.position,
-            role: employee.role
+            employee_id: employee ? employee.employee_id : admin.admin_id,
+            employee_code: employee ? employee.employee_code : admin.username,
+            full_name: employee ? employee.full_name : admin.full_name,
+            position: employee ? employee.position : 'Superadmin',
+            role: employee ? employee.role : 'superadmin'
         });
 
         res.json({
             success: true,
             accessToken: newAccessToken,
-            employee: {
+            employee: employee ? {
                 employee_id: employee.employee_id,
                 employee_code: employee.employee_code,
                 full_name: employee.full_name,
                 position: employee.position,
                 role: employee.role
+            } : {
+                admin_id: admin.admin_id,
+                username: admin.username,
+                full_name: admin.full_name,
+                position: 'Superadmin',
+                role: 'superadmin'
             }
         });
 

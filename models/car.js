@@ -1,593 +1,7 @@
-const prisma = require('../config/db.js');
+const prisma = require('../config/db');
 
-// Create
-async function createCar(data) {
-    const {
-        // แยกข้อมูลตาม categories
-        // ข้อมูลพื้นฐาน
-        brand_id, model_id, submodel_id, color_id,
-        car_code, status, car_tracking, purchase_date,
-        license_plate_no, license_plate_province,
-        new_license_plate_no, new_license_plate_province,
-        chassis_no, engine_no, mileage,
-        registration_date, registration_date_year,
-        registration_date_month, registration_date_day,
-
-        // ข้อมูลการเงิน
-        financialDetails,
-
-        // ข้อมูลค่าใช้จ่าย
-        expenseDetails,
-
-        // ข้อมูลการอนุมัติ
-        approvalDetails,
-
-        // ข้อมูลสถานที่
-        locationDetails,
-
-        // ข้อมูลภาษี
-        taxDetails,
-
-        // ข้อมูลการติดตามเอกสาร
-        documentTracking,
-
-        // ข้อมูลผู้เกี่ยวข้อง
-        associatedEntities,
-
-        // ข้อมูลทั่วไป
-        generalInfo,
-
-        ...otherData
-    } = data;
-
-    return await prisma.car.create({
-        data: {
-            // ข้อมูลพื้นฐาน
-            car_code,
-            status,
-            car_tracking,
-            purchase_date,
-            license_plate_no,
-            license_plate_province,
-            new_license_plate_no,
-            new_license_plate_province,
-            chassis_no,
-            engine_no,
-            mileage,
-            registration_date,
-            registration_date_year,
-            registration_date_month,
-            registration_date_day,
-
-            // Relations
-            car_brand: brand_id ? {
-                connect: { brand_id }
-            } : undefined,
-            car_model: model_id ? {
-                connect: { model_id }
-            } : undefined,
-            car_submodel: submodel_id ? {
-                connect: { submodel_id }
-            } : undefined,
-            color: color_id ? {
-                connect: { color_id }
-            } : undefined,
-
-            // Create related records
-            financialDetails: {
-                create: financialDetails
-            },
-            expenseDetails: {
-                create: expenseDetails
-            },
-            approvalDetails: {
-                create: approvalDetails
-            },
-            locationDetails: {
-                create: locationDetails
-            },
-            taxDetails: {
-                create: taxDetails
-            },
-            documentTracking: {
-                create: documentTracking
-            },
-            associatedEntities: {
-                create: associatedEntities
-            },
-            generalInfo: {
-                create: generalInfo
-            },
-
-            ...otherData
-        },
-        include: {
-            car_brand: true,
-            car_model: true,
-            car_submodel: true,
-            color: true,
-            financialDetails: true,
-            expenseDetails: true,
-            approvalDetails: true,
-            locationDetails: true,
-            taxDetails: true,
-            documentTracking: true,
-            associatedEntities: true,
-            generalInfo: true
-        }
-    });
-}
-
-// Read
-async function findCarById(car_id) {
-    return await prisma.car.findUnique({
-        where: { car_id },
-        include: {
-            car_brand: true,
-            car_model: true,
-            car_submodel: true,
-            color: true,
-            financialDetails: true,
-            expenseDetails: true,
-            approvalDetails: true,
-            locationDetails: {
-                include: {
-                    parking_location: true,
-                    sale_branch: true,
-                    branch_50_percent: true
-                }
-            },
-            taxDetails: {
-                include: {
-                    purchase_tax_invoices: {
-                        include: {
-                            purchaseTaxInvoice: true
-                        }
-                    },
-                    withholding_tax_invoices: {
-                        include: {
-                            withholdingTaxInvoice: true
-                        }
-                    },
-                    sale_tax_invoices: {
-                        include: {
-                            taxInvoice: true
-                        }
-                    }
-                }
-            },
-            documentTracking: {
-                include: {
-                    financing: true
-                }
-            },
-            associatedEntities: {
-                include: {
-                    purchase_from: true,
-                    customer: true,
-                    salesperson: true
-                }
-            },
-            generalInfo: true,
-            reservation: true,
-            sale: true,
-            carInspection: true,
-            maintenance: true,
-            accounting: true,
-            customerPurchaseHistory: true,
-            bankTransferTracking: true
-        }
-    });
-}
-
-// Update
-async function updateCarById(car_id, data) {
-    const {
-        financialDetails,
-        expenseDetails,
-        approvalDetails,
-        locationDetails,
-        taxDetails,
-        documentTracking,
-        associatedEntities,
-        generalInfo,
-        ...mainData
-    } = data;
-
-    // Start transaction
-    return await prisma.$transaction(async (prisma) => {
-        // Update main car data
-        const updatedCar = await prisma.car.update({
-            where: { car_id },
-            data: mainData
-        });
-
-        // Update related records if provided
-        if (financialDetails) {
-            await prisma.carFinancialDetails.updateMany({
-                where: { car_id },
-                data: financialDetails
-            });
-        }
-
-        if (expenseDetails) {
-            await prisma.carExpenseDetails.updateMany({
-                where: { car_id },
-                data: expenseDetails
-            });
-        }
-
-        if (approvalDetails) {
-            await prisma.carApprovalDetails.updateMany({
-                where: { car_id },
-                data: approvalDetails
-            });
-        }
-
-        if (locationDetails) {
-            await prisma.carLocationDetails.updateMany({
-                where: { car_id },
-                data: locationDetails
-            });
-        }
-
-        if (taxDetails) {
-            await prisma.carTaxDetails.updateMany({
-                where: { car_id },
-                data: taxDetails
-            });
-        }
-
-        if (documentTracking) {
-            await prisma.carDocumentTracking.updateMany({
-                where: { car_id },
-                data: documentTracking
-            });
-        }
-
-        if (associatedEntities) {
-            await prisma.carAssociatedEntities.updateMany({
-                where: { car_id },
-                data: associatedEntities
-            });
-        }
-
-        if (generalInfo) {
-            await prisma.carGeneralInfo.updateMany({
-                where: { car_id },
-                data: generalInfo
-            });
-        }
-
-        return findCarById(car_id); // Return full updated data
-    });
-}
-
-// Delete (Soft Delete)
-async function deleteCarById(car_id) {
-    const now = new Date();
-    return await prisma.$transaction([
-        prisma.car.update({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carFinancialDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carExpenseDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carApprovalDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carLocationDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carTaxDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carDocumentTracking.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carAssociatedEntities.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carGeneralInfo.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        // เพิ่มการลบข้อมูลที่เกี่ยวข้องอื่น ๆ ที่จำเป็น
-        prisma.carInspection.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.maintenance.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.accounting.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.customerPurchaseHistory.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.bankTransferTracking.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-    ]);
-}
-
-// Find All Cars with advanced filtering
-async function findAllCars({ 
-    page, 
-    limit, 
-    search, 
-    status,
-    sortBy,
-    sortOrder,
-    startDate,
-    endDate,
-    brand_id,
-    model_id,
-    price_range,
-    location_id
-}) {
-    const where = {
-        deleted_at: null,
-        AND: [
-            search ? {
-                OR: [
-                    { car_code: { contains: search, mode: 'insensitive' } },
-                    { license_plate_no: { contains: search, mode: 'insensitive' } },
-                    { chassis_no: { contains: search, mode: 'insensitive' } }
-                ]
-            } : undefined,
-            status ? { status } : undefined,
-            brand_id ? { brand_id: parseInt(brand_id) } : undefined,
-            model_id ? { model_id: parseInt(model_id) } : undefined,
-            startDate && endDate ? {
-                purchase_date: {
-                    gte: new Date(startDate),
-                    lte: new Date(endDate)
-                }
-            } : undefined,
-            price_range ? {
-                financialDetails: {
-                    some: {
-                        sale_price: {
-                            gte: price_range.min,
-                            lte: price_range.max
-                        }
-                    }
-                }
-            } : undefined,
-            location_id ? {
-                locationDetails: {
-                    some: {
-                        parking_id: parseInt(location_id)
-                    }
-                }
-            } : undefined
-        ].filter(Boolean)
-    };
-
-    const [cars, total] = await Promise.all([
-        prisma.car.findMany({
-            skip: (page - 1) * limit,
-            take: limit,
-            where,
-            include: {
-                car_brand: true,
-                car_model: true,
-                car_submodel: true,
-                color: true,
-                financialDetails: true,
-                locationDetails: {
-                    include: {
-                        parking_location: true
-                    }
-                },
-                generalInfo: true
-            },
-            orderBy: {
-                [sortBy]: sortOrder
-            }
-        }),
-        prisma.car.count({ where })
-    ]);
-
-    return {
-        data: cars,
-        pagination: {
-            total,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page,
-            limit,
-            hasNext: page < Math.ceil(total / limit),
-            hasPrev: page > 1
-        }
-    };
-}
-
-// ฟังก์ชันเพิ่มเติมที่อาจมีอยู่
-
-// ค้นหารถตามเดือน
-async function findCarsByMonth(year, month) {
-    return await prisma.car.findMany({
-        where: {
-            purchase_date: {
-                gte: new Date(year, month - 1, 1), // เริ่มต้นเดือน
-                lt: new Date(year, month, 1) // สิ้นสุดเดือน
-            },
-            deleted_at: null // ตรวจสอบว่าไม่ได้ถูกลบ
-        },
-        include: {
-            car_brand: true,
-            car_model: true,
-            car_submodel: true,
-            color: true,
-            financialDetails: true,
-            locationDetails: true,
-            generalInfo: true
-        }
-    });
-}
-
-// ค้นหารถตามปี
-async function findCarsByYear(year) {
-    return await prisma.car.findMany({
-        where: {
-            purchase_date: {
-                gte: new Date(year, 0, 1), // เริ่มต้นปี
-                lt: new Date(year + 1, 0, 1) // สิ้นสุดปี
-            },
-            deleted_at: null // ตรวจสอบว่าไม่ได้ถูกลบ
-        },
-        include: {
-            car_brand: true,
-            car_model: true,
-            car_submodel: true,
-            color: true,
-            financialDetails: true,
-            locationDetails: true,
-            generalInfo: true
-        }
-    });
-}
-
-// ลบรถตามเดือน
-async function removeCarsByMonth(year, month) {
-    const now = new Date();
-    return await prisma.$transaction([
-        prisma.car.updateMany({
-            where: {
-                purchase_date: {
-                    gte: new Date(year, month - 1, 1), // เริ่มต้นเดือน
-                    lt: new Date(year, month, 1) // สิ้นสุดเดือน
-                },
-                deleted_at: null // ตรวจสอบว่าไม่ได้ถูกลบ
-            },
-            data: { deleted_at: now }
-        }),
-        // ลบข้อมูลที่เกี่ยวข้องอื่น ๆ ที่จำเป็น
-        prisma.carFinancialDetails.updateMany({
-            where: {
-                car: {
-                    purchase_date: {
-                        gte: new Date(year, month - 1, 1),
-                        lt: new Date(year, month, 1)
-                    }
-                }
-            },
-            data: { deleted_at: now }
-        }),
-        prisma.carExpenseDetails.updateMany({
-            where: {
-                car: {
-                    purchase_date: {
-                        gte: new Date(year, month - 1, 1),
-                        lt: new Date(year, month, 1)
-                    }
-                }
-            },
-            data: { deleted_at: now }
-        }),
-        // เพิ่มการลบข้อมูลที่เกี่ยวข้องอื่น ๆ ที่จำเป็น
-    ]);
-}
-
-// ลบรถตามปี
-async function removeCarsByYear(year) {
-    const now = new Date();
-    return await prisma.$transaction([
-        prisma.car.updateMany({
-            where: {
-                purchase_date: {
-                    gte: new Date(year, 0, 1), // เริ่มต้นปี
-                    lt: new Date(year + 1, 0, 1) // สิ้นสุดปี
-                },
-                deleted_at: null // ตรวจสอบว่าไม่ได้ถูกลบ
-            },
-            data: { deleted_at: now }
-        }),
-        // ลบข้อมูลที่เกี่ยวข้องอื่น ๆ ที่จำเป็น
-        prisma.carFinancialDetails.updateMany({
-            where: {
-                car: {
-                    purchase_date: {
-                        gte: new Date(year, 0, 1),
-                        lt: new Date(year + 1, 0, 1)
-                    }
-                }
-            },
-            data: { deleted_at: now }
-        }),
-        prisma.carExpenseDetails.updateMany({
-            where: {
-                car: {
-                    purchase_date: {
-                        gte: new Date(year, 0, 1),
-                        lt: new Date(year + 1, 0, 1)
-                    }
-                }
-            },
-            data: { deleted_at: now }
-        }),
-        // เพิ่มการลบข้อมูลที่เกี่ยวข้องอื่น ๆ ที่จำเป็น
-    ]);
-}
-
-// ดึงสถิติรถ
-async function getStatistics() {
-    const totalCars = await prisma.car.count({
-        where: { deleted_at: null }
-    });
-
-    const totalSales = await prisma.accounting.aggregate({
-        _sum: {
-            amount: true
-        },
-        where: {
-            transaction_type: 'sale',
-            car: {
-                deleted_at: null
-            }
-        }
-    });
-
-    return {
-        totalCars,
-        totalSales: totalSales._sum.amount || 0
-    };
-}
-
-// ค้นหารถตาม car_code
-async function findCarByCode(car_code) {
-    return await prisma.car.findUnique({
-        where: { car_code },
-        include: {
-            car_brand: true,
-            car_model: true,
-            car_submodel: true,
-            color: true,
-            financialDetails: true,
-            locationDetails: true,
-            generalInfo: true
-        }
-    });
-}
-
-module.exports = {
+// Existing functions
+const {
     createCar,
     findCarById,
     updateCarById,
@@ -599,4 +13,357 @@ module.exports = {
     removeCarsByYear,
     getStatistics,
     findCarByCode,
+} = require('./existing-car-functions');  // แยกฟังก์ชันเดิมไปไว้อีกไฟล์
+
+// Financial functions
+async function updateFinancialDetails(car_id, data) {
+    const existingDetails = await prisma.carFinancialDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+
+    if (existingDetails) {
+        return await prisma.carFinancialDetails.update({
+            where: { id: existingDetails.id },
+            data: data
+        });
+    } else {
+        return await prisma.carFinancialDetails.create({
+            data: { car_id, ...data }
+        });
+    }
+}
+
+async function getFinancialDetails(car_id) {
+    return await prisma.carFinancialDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+}
+
+async function addExpense(car_id, data) {
+    return await prisma.carExpenseDetails.create({
+        data: { ...data, car_id }
+    });
+}
+
+async function getExpenses(car_id) {
+    return await prisma.carExpenseDetails.findMany({
+        where: { car_id }
+    });
+}
+
+// Document functions
+async function updateDocuments(car_id, data) {
+    const existingDoc = await prisma.carDocumentTracking.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+
+    if (existingDoc) {
+        return await prisma.carDocumentTracking.update({
+            where: { id: existingDoc.id },
+            data: { ...data, updated_at: new Date() }
+        });
+    } else {
+        return await prisma.carDocumentTracking.create({
+            data: { car_id, ...data }
+        });
+    }
+}
+
+async function getDocuments(car_id) {
+    return await prisma.carDocumentTracking.findMany({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+}
+
+async function trackDocument(car_id, document_id) {
+    return await prisma.carDocumentTracking.findFirst({
+        where: { car_id, id: document_id }
+    });
+}
+
+async function updateDocumentStatus(car_id, document_id, status, notes) {
+    return await prisma.carDocumentTracking.update({
+        where: { id: document_id, car_id },
+        data: { status, notes, updated_at: new Date() }
+    });
+}
+
+// Location functions
+async function updateLocation(car_id, data) {
+    const existingLocation = await prisma.carLocationDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+
+    if (existingLocation) {
+        return await prisma.carLocationDetails.update({
+            where: { id: existingLocation.id },
+            data: { ...data, updated_at: new Date() }
+        });
+    } else {
+        return await prisma.carLocationDetails.create({
+            data: { car_id, ...data }
+        });
+    }
+}
+
+async function getLocation(car_id) {
+    return await prisma.carLocationDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+}
+
+async function updateParkingStatus(car_id, parking_id, status) {
+    return await prisma.carLocationDetails.update({
+        where: { car_id },
+        data: { 
+            parking_id,
+            parking_status: status,
+            updated_at: new Date()
+        }
+    });
+}
+
+// Inspection functions
+async function createInspection(car_id, data) {
+    return await prisma.carInspection.create({
+        data: { ...data, car_id }
+    });
+}
+
+async function getInspections(car_id, options = {}) {
+    const { page = 1, limit = 10, status, startDate, endDate } = options;
+    
+    const where = {
+        car_id,
+        ...(status && { status }),
+        ...(startDate && endDate && {
+            inspection_date: {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
+            }
+        })
+    };
+
+    return await prisma.carInspection.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { inspection_date: 'desc' }
+    });
+}
+
+async function updateInspection(car_id, inspection_id, data) {
+    return await prisma.carInspection.update({
+        where: { id: inspection_id, car_id },
+        data: { ...data, updated_at: new Date() }
+    });
+}
+
+async function deleteInspection(car_id, inspection_id) {
+    return await prisma.carInspection.update({
+        where: { id: inspection_id, car_id },
+        data: { deleted_at: new Date() }
+    });
+}
+
+// เพิ่มฟังก์ชันสำหรับ Approval Details
+async function updateApprovalDetails(car_id, data) {
+    const existingApproval = await prisma.carApprovalDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+
+    if (existingApproval) {
+        return await prisma.carApprovalDetails.update({
+            where: { id: existingApproval.id },
+            data: { ...data, updated_at: new Date() }
+        });
+    } else {
+        return await prisma.carApprovalDetails.create({
+            data: { car_id, ...data }
+        });
+    }
+}
+
+async function getApprovalDetails(car_id) {
+    return await prisma.carApprovalDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+}
+
+// เพิ่มฟังก์ชันสำหรับ Tax Details
+async function updateTaxDetails(car_id, data) {
+    const existingTax = await prisma.carTaxDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+
+    if (existingTax) {
+        return await prisma.carTaxDetails.update({
+            where: { id: existingTax.id },
+            data: { ...data, updated_at: new Date() }
+        });
+    } else {
+        return await prisma.carTaxDetails.create({
+            data: { car_id, ...data }
+        });
+    }
+}
+
+async function getTaxDetails(car_id) {
+    return await prisma.carTaxDetails.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        },
+        include: {
+            purchase_tax_invoices: true,
+            withholding_tax_invoices: true,
+            sale_tax_invoices: true
+        }
+    });
+}
+
+// เพิ่มฟังก์ชันสำหรับ Associated Entities
+async function updateAssociatedEntities(car_id, data) {
+    const existingEntities = await prisma.carAssociatedEntities.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+
+    if (existingEntities) {
+        return await prisma.carAssociatedEntities.update({
+            where: { id: existingEntities.id },
+            data: { ...data, updated_at: new Date() }
+        });
+    } else {
+        return await prisma.carAssociatedEntities.create({
+            data: { car_id, ...data }
+        });
+    }
+}
+
+async function getAssociatedEntities(car_id) {
+    return await prisma.carAssociatedEntities.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        },
+        include: {
+            purchase_from: true,
+            customer: true,
+            salesperson: true
+        }
+    });
+}
+
+// เพิ่มฟังก์ชันสำหรับ General Info
+async function updateGeneralInfo(car_id, data) {
+    const existingInfo = await prisma.carGeneralInfo.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+
+    if (existingInfo) {
+        return await prisma.carGeneralInfo.update({
+            where: { id: existingInfo.id },
+            data: { ...data, updated_at: new Date() }
+        });
+    } else {
+        return await prisma.carGeneralInfo.create({
+            data: { car_id, ...data }
+        });
+    }
+}
+
+async function getGeneralInfo(car_id) {
+    return await prisma.carGeneralInfo.findFirst({
+        where: {
+            car_id: car_id,
+            deleted_at: null
+        }
+    });
+}
+
+module.exports = {
+    // Existing exports
+    createCar,
+    findCarById,
+    updateCarById,
+    deleteCarById,
+    findAllCars,
+    findCarsByMonth,
+    findCarsByYear,
+    removeCarsByMonth,
+    removeCarsByYear,
+    getStatistics,
+    findCarByCode,
+
+    // New financial exports
+    updateFinancialDetails,
+    getFinancialDetails,
+    addExpense,
+    getExpenses,
+
+    // New document exports
+    updateDocuments,
+    getDocuments,
+    trackDocument,
+    updateDocumentStatus,
+
+    // New location exports
+    updateLocation,
+    getLocation,
+    updateParkingStatus,
+
+    // New inspection exports
+    createInspection,
+    getInspections,
+    updateInspection,
+    deleteInspection,
+
+    // New approval exports
+    updateApprovalDetails,
+    getApprovalDetails,
+
+    // New tax exports
+    updateTaxDetails,
+    getTaxDetails,
+
+    // New associated entities exports
+    updateAssociatedEntities,
+    getAssociatedEntities,
+
+    // New general info exports
+    updateGeneralInfo,
+    getGeneralInfo
 };

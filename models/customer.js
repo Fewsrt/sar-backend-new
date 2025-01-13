@@ -1,3 +1,4 @@
+const { transferStatus } = require('@prisma/client');
 const prisma = require('../config/db');
 
 // Get list of customers
@@ -26,9 +27,10 @@ const getCustomers = async () => {
             reservation: true,
             sale: true,
             followUp: true,
-            car: true,
+            carAssociatedEntities: true,
             customerPurchaseHistory: true,
-            taxInvoice: true
+            taxInvoice: true,
+            financing: true
         }
     });
 };
@@ -60,9 +62,10 @@ const getCustomerById = async (customerId) => {
             reservation: true,
             sale: true,
             followUp: true,
-            car: true,
+            carAssociatedEntities: true,
             customerPurchaseHistory: true,
-            taxInvoice: true
+            taxInvoice: true,
+            financing: true
         }
     });
 };

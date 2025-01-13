@@ -300,8 +300,8 @@ model carApprovalDetails {
   approval_status Boolean?  @default(false)
   booked_status   Boolean?  @default(false)
   payment_status  Boolean?  @default(false)
-  approval_order  Int?
-  payment_order   Int?
+  approval_order  String?
+  payment_order   String?
   approval_date   DateTime?
   booked_date     DateTime?
   payment_date    DateTime?
@@ -315,9 +315,9 @@ model carApprovalDetails {
 
 // หมวดหมู่ข้อมูลที่เกี่ยวข้องกับสถานที่และการจัดเก็บ
 model carLocationDetails {
-  id                   Int     @id @default(autoincrement())
+  id                   Int    @id @default(autoincrement())
   car_id               Int
-  parking_id           Int
+  parking_id           Int?
   parking_location     branch? @relation("ParkingLocation", fields: [parking_id], references: [branch_id])
   sale_branch_id       Int?
   sale_branch          branch? @relation("CarSaleBranch", fields: [sale_branch_id], references: [branch_id])
@@ -536,6 +536,8 @@ model bankEmployee {
   email                String                 @unique
   position             String
   note                 String?
+  branch_id            Int?
+  branch               branch?                 @relation(fields: [branch_id], references: [branch_id])
   bankTransferTracking bankTransferTracking[]
 }
 
@@ -554,6 +556,7 @@ model branch {
   district     district       @relation(fields: [district_id], references: [id])
   province     province       @relation(fields: [province_id], references: [id])
   employee     employee[]
+  bankEmployee bankEmployee[]
   sale         sale[]
   accounting   accounting[]
   liveSchedule liveSchedule[]

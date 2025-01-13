@@ -7,7 +7,6 @@ router
     .get('/setup/status', asyncHandler(setupController.checkSetupStatus))
     .get('/setup/token', asyncHandler(setupTokenController.generateSetupToken))
     .post('/setup/initialize', 
-        setupTokenController.validateToken, 
         asyncHandler(setupController.initializeSystem)
     );
 

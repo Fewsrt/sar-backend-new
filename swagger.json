@@ -472,6 +472,119 @@
             "$ref": "#/components/schemas/Car"
           }
         }
+      },
+      "CarFinancial": {
+        "type": "object",
+        "properties": {
+          "sale_price": { "type": "number" },
+          "net_cost": { "type": "number" },
+          "gross_profit": { "type": "number" },
+          "purchase_price": { "type": "number" },
+          "operation_cost": { "type": "number" }
+        }
+      },
+      "CarDocument": {
+        "type": "object",
+        "properties": {
+          "fp_due_date": { "type": "string", "format": "date-time" },
+          "book_close_date": { "type": "string", "format": "date-time" },
+          "book_sent_to_bank_date": { "type": "string", "format": "date-time" },
+          "transfer_status": { 
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "cancelled"]
+          },
+          "book_record": { "type": "string" },
+          "installment_amount": { "type": "number" },
+          "installment_number": { "type": "integer" }
+        }
+      },
+      "CarLocation": {
+        "type": "object",
+        "properties": {
+          "parking_id": { "type": "integer" },
+          "parking_status": { "type": "string" },
+          "location_note": { "type": "string" }
+        }
+      },
+      "CarStatistics": {
+        "type": "object",
+        "properties": {
+          "total_cars": { "type": "integer" },
+          "cars_by_status": {
+            "type": "object",
+            "additionalProperties": { "type": "integer" }
+          },
+          "total_value": { "type": "number" }
+        }
+      },
+      "CarApproval": {
+        "type": "object",
+        "properties": {
+          "approval_status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "approval_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approved_by": {
+            "type": "integer",
+            "description": "Employee ID who approved"
+          },
+          "approval_notes": {
+            "type": "string"
+          }
+        }
+      },
+      "CarTax": {
+        "type": "object",
+        "properties": {
+          "purchase_tax_invoices": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PurchaseTaxInvoice" }
+          },
+          "withholding_tax_invoices": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/WithholdingTaxInvoice" }
+          },
+          "sale_tax_invoices": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SaleTaxInvoice" }
+          }
+        }
+      },
+      "CarAssociatedEntities": {
+        "type": "object",
+        "properties": {
+          "purchase_from": { "$ref": "#/components/schemas/supplier" },
+          "customer": { "$ref": "#/components/schemas/Customer" },
+          "salesperson": { "$ref": "#/components/schemas/Employee" }
+        }
+      },
+      "CarGeneralInfo": {
+        "type": "object",
+        "properties": {
+          "fp_name": {
+            "type": "string"
+          },
+          "promotion_detail": {
+            "type": "string"
+          },
+          "tracking_note": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "car_image_link": {
+            "type": "string"
+          },
+          "car_release_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   },
@@ -2652,6 +2765,574 @@
         "responses": {
           "200": {
             "description": "Withholding tax invoice deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/cars": {
+      "get": {
+        "tags": ["Cars"],
+        "summary": "Get all cars",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": { "type": "string" },
+            "description": "Search term"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": { 
+              "type": "string",
+              "enum": ["car_entry", "inspection", "maintenance", "available", "reserved", "approved", "delivery", "payment_received", "sold", "pending"]
+            }
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": { "type": "string", "default": "car_code" }
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": { "type": "string", "enum": ["asc", "desc"], "default": "asc" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Car" }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "integer" },
+                        "page": { "type": "integer" },
+                        "limit": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Cars"],
+        "summary": "Add new car",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Car" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Car created successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Cars"],
+        "summary": "Get car by ID",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Car" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Cars"],
+        "summary": "Update car",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Car" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Car updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Cars"],
+        "summary": "Delete car",
+        "responses": {
+          "200": {
+            "description": "Car deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/financial": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Financial"],
+        "summary": "Get car financial details",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarFinancial" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Car Financial"],
+        "summary": "Update car financial details",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CarFinancial" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Financial details updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/documents": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Documents"],
+        "summary": "Get car documents",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CarDocument" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Car Documents"],
+        "summary": "Update car documents",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CarDocument" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Documents updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/documents/{document_id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        },
+        {
+          "in": "path",
+          "name": "document_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Documents"],
+        "summary": "Track specific document",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarDocument" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Car Documents"],
+        "summary": "Update document status",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "cancelled"] },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document status updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/location": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Location"],
+        "summary": "Get car location details",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarLocation" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Car Location"],
+        "summary": "Update car location",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CarLocation" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/parking": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "patch": {
+        "tags": ["Car Location"],
+        "summary": "Update parking status",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "parking_id": { "type": "integer" },
+                  "status": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Parking status updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/stats/monthly/{year}/{month}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "year",
+          "required": true,
+          "schema": { "type": "integer" }
+        },
+        {
+          "in": "path",
+          "name": "month",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Statistics"],
+        "summary": "Get monthly car statistics",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarStatistics" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cars/stats/yearly/{year}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "year",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Statistics"],
+        "summary": "Get yearly car statistics",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarStatistics" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/approval": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Approval"],
+        "summary": "Get car approval details",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarApproval" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Car Approval"],
+        "summary": "Update car approval details",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CarApproval" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Approval details updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/tax": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Tax"],
+        "summary": "Get car tax details",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarTax" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Car Tax"],
+        "summary": "Update car tax details",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CarTax" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tax details updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/entities": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Entities"],
+        "summary": "Get car associated entities",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarAssociatedEntities" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Car Entities"],
+        "summary": "Update car associated entities",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CarAssociatedEntities" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Associated entities updated successfully"
+          }
+        }
+      }
+    },
+    "/api/cars/{car_id}/info": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "car_id",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "get": {
+        "tags": ["Car Info"],
+        "summary": "Get car general information",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CarGeneralInfo" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Car Info"],
+        "summary": "Update car general information",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CarGeneralInfo" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "General information updated successfully"
           }
         }
       }
