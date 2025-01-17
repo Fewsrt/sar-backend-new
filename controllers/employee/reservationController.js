@@ -4,10 +4,16 @@ const reservationModel = require('../../models/reservation');
 const getAllReservations = async (req, res) => {
     try {
         const reservations = await reservationModel.getAllReservations();
-        res.json(reservations);
+        res.json({
+            success: true,
+            data: reservations
+        });
     } catch (error) {
         console.error('Error in getAllReservations:', error);
-        res.status(500).json({ error: 'Unable to fetch reservation records' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to fetch reservation records' 
+        });
     }
 };
 
@@ -16,13 +22,16 @@ const getReservationById = async (req, res) => {
     const { reservationId } = req.params;
     try {
         const reservation = await reservationModel.getReservationById(reservationId);
-        if (!reservation) {
-            return res.status(404).json({ error: 'Reservation not found' });
-        }
-        res.json(reservation);
+        res.json({
+            success: true,
+            data: reservation || null
+        });
     } catch (error) {
         console.error('Error in getReservationById:', error);
-        res.status(500).json({ error: 'Unable to fetch reservation' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to fetch reservation' 
+        });
     }
 };
 
@@ -31,13 +40,16 @@ const getReservationsByCustomerId = async (req, res) => {
     const { customerId } = req.params;
     try {
         const reservations = await reservationModel.getReservationsByCustomerId(customerId);
-        if (!reservations || reservations.length === 0) {
-            return res.status(404).json({ error: 'No reservations found for this customer' });
-        }
-        res.json(reservations);
+        res.json({
+            success: true,
+            data: reservations || []
+        });
     } catch (error) {
         console.error('Error in getReservationsByCustomerId:', error);
-        res.status(500).json({ error: 'Unable to fetch customer reservations' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to fetch customer reservations' 
+        });
     }
 };
 
@@ -46,13 +58,16 @@ const getReservationsByCarId = async (req, res) => {
     const { carId } = req.params;
     try {
         const reservations = await reservationModel.getReservationsByCarId(carId);
-        if (!reservations || reservations.length === 0) {
-            return res.status(404).json({ error: 'No reservations found for this car' });
-        }
-        res.json(reservations);
+        res.json({
+            success: true,
+            data: reservations || []
+        });
     } catch (error) {
         console.error('Error in getReservationsByCarId:', error);
-        res.status(500).json({ error: 'Unable to fetch car reservations' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to fetch car reservations' 
+        });
     }
 };
 
@@ -62,6 +77,7 @@ const createReservation = async (req, res) => {
         customer_id,
         car_id,
         reservation_date,
+        due_date,
         status,
         note
     } = req.body;
@@ -71,13 +87,20 @@ const createReservation = async (req, res) => {
             customer_id,
             car_id,
             reservation_date,
+            due_date,
             status,
             note
         });
-        res.status(201).json(newReservation);
+        res.status(201).json({
+            success: true,
+            data: newReservation
+        });
     } catch (error) {
         console.error('Error in createReservation:', error);
-        res.status(500).json({ error: 'Unable to create reservation' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to create reservation' 
+        });
     }
 };
 
@@ -99,10 +122,16 @@ const updateReservation = async (req, res) => {
                 note
             }
         );
-        res.json(updatedReservation);
+        res.json({
+            success: true,
+            data: updatedReservation
+        });
     } catch (error) {
         console.error('Error in updateReservation:', error);
-        res.status(500).json({ error: 'Unable to update reservation' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to update reservation' 
+        });
     }
 };
 
@@ -111,10 +140,16 @@ const deleteReservation = async (req, res) => {
     const { reservationId } = req.params;
     try {
         await reservationModel.deleteReservation(reservationId);
-        res.json({ message: 'Reservation deleted successfully' });
+        res.json({ 
+            success: true,
+            message: 'Reservation deleted successfully' 
+        });
     } catch (error) {
         console.error('Error in deleteReservation:', error);
-        res.status(500).json({ error: 'Unable to delete reservation' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to delete reservation' 
+        });
     }
 };
 

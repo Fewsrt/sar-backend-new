@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const prisma = require('../config/db.js');
 const path = require('path');
+const { generateCarCode } = require('./carCode');
 
 // ฟังก์ชันสำหรับสร้างโฟลเดอร์ใน Google Drive
 async function createFolderInGoogleDrive(car_id, car_code) {
@@ -73,7 +74,7 @@ async function createCar(data) {
         // แยกข้อมูลตาม categories
         // ข้อมูลพื้นฐาน
         brand_id, model_id, submodel_id, color_id,
-        car_code, status, car_tracking, purchase_date,
+        status, car_tracking, purchase_date,
         license_plate_no, license_plate_province,
         new_license_plate_no, new_license_plate_province,
         chassis_no, engine_no, mileage,
@@ -108,6 +109,8 @@ async function createCar(data) {
     } = data;
 
     // สร้างรถยนต์ในฐานข้อมูล
+    const { car_code, year, month } = await generateCarCode();
+
     const newCar = await prisma.car.create({
         data: {
             // ข้อมูลพื้นฐาน
@@ -126,6 +129,8 @@ async function createCar(data) {
             registration_date_year,
             registration_date_month,
             registration_date_day,
+            year,
+            month,
 
             // Relations
             car_brand: brand_id ? {
@@ -145,9 +150,9 @@ async function createCar(data) {
             financialDetails: {
                 create: financialDetails
             },
-            expenseDetails: {
-                create: expenseDetails
-            },
+            // expenseDetails: {
+            //     create: expenseDetails
+            // },
             approvalDetails: {
                 create: approvalDetails
             },
@@ -201,7 +206,11 @@ async function findCarById(car_id) {
             car_submodel: true,
             color: true,
             financialDetails: true,
-            expenseDetails: true,
+            expenseDetails: {
+                include: {
+                    category: true
+                }
+            },
             approvalDetails: true,
             locationDetails: {
                 include: {
@@ -280,13 +289,6 @@ async function updateCarById(car_id, data) {
             await prisma.carFinancialDetails.updateMany({
                 where: { car_id },
                 data: financialDetails
-            });
-        }
-
-        if (expenseDetails) {
-            await prisma.carExpenseDetails.updateMany({
-                where: { car_id },
-                data: expenseDetails
             });
         }
 
@@ -470,7 +472,9 @@ async function findAllCars({
                         parking_location: true
                     }
                 },
-                generalInfo: true
+                generalInfo: true,
+                expenseDetails: true,
+                approvalDetails: true
             },
             orderBy: {
                 [sortBy]: sortOrder

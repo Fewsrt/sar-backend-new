@@ -35,5 +35,7 @@ router.use('/live-schedules', auth, asyncHandler(require('./liveScheduleRoutes')
 router.use('/tax-invoices', auth, asyncHandler(require('./taxInvoiceRoutes')));
 router.use('/purchase-tax-invoices', auth, asyncHandler(require('./purchaseTaxInvoiceRoutes')));
 router.use('/withholding-tax-invoices', auth, asyncHandler(require('./withholdingTaxInvoiceRoutes')));
+router.use('/expense-categories', auth, asyncHandler(require('./expenseCategoryRoutes')));
+router.use('/support-tickets', auth, asyncHandler(require('./supportTicketRoutes')));
 
 module.exports = router; 

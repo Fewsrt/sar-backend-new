@@ -16,7 +16,9 @@ const authenticateToken = async (req, res, next) => {
 
         // Get fresh admin data
         const admin = await prisma.admin.findUnique({
-            where: { id: decoded.id },
+            where: { 
+                id: decoded.admin_id
+            },
             select: {
                 id: true,
                 username: true,
@@ -29,7 +31,36 @@ const authenticateToken = async (req, res, next) => {
         });
 
         if (!admin) {
-            throw new AppError('User not found', 401);
+            // ถ้าไม่พบ admin ให้ลองค้นหา employee
+            const employee = await prisma.employee.findUnique({
+                where: { 
+                    employee_id: decoded.employee_id
+                },
+                select: {
+                    employee_id: true,
+                    employee_code: true,
+                    full_name: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                    branch_id: true
+                }
+            });
+
+            if (!employee) {
+                throw new AppError('User not found', 401);
+            }
+
+            if (!employee.status) {
+                throw new AppError('Account is disabled', 403);
+            }
+
+            req.user = {
+                ...employee,
+                id: employee.employee_id,
+                name: employee.full_name
+            };
+            return next();
         }
 
         if (!admin.status) {

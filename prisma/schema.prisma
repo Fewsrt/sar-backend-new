@@ -185,7 +185,7 @@ model car {
   car_id                     Int             @id @default(autoincrement())
   car_code                   String          @unique
   status                     carStatus       @default(car_entry)
-  car_tracking               trackingStatus? @default(pending) // enum
+  car_tracking               String?
   purchase_date              DateTime?
   license_plate_no           String?
   license_plate_province     String?
@@ -209,7 +209,8 @@ model car {
 
   // Relation
   financialDetails   carFinancialDetails[]
-  expenseDetails     carExpenseDetails[]
+  expenseDetails     carExpense[]
+  expenseSummary     carExpenseSummary[]
   approvalDetails    carApprovalDetails[]
   locationDetails    carLocationDetails[]
   taxDetails         carTaxDetails[]
@@ -263,34 +264,49 @@ model carFinancialDetails {
   deleted_at DateTime?
 }
 
-// หมวดหมู่ค่าใช้จ่ายและโปรโมชั่น
-model carExpenseDetails {
-  id                       Int     @id @default(autoincrement())
-  car_id                   Int
-  interest_fp              Float?
-  body_repair              Float?
-  service_cost             Float?
-  film_radio               Float?
-  seat_upholstery          Float?
-  tax_transfer             Float?
-  sales_commission         Float?
-  fuel_cost                Float?
-  referral_fee             Float?
-  trailer_cost             Float?
-  other_expenses           Float?
-  new_tires                Float?
-  installment_support      Float?
-  cash_back                Float?
-  other_promotions         String?
-  total_promotion_expenses Float?
-  final_profit             Float?
-  total_expenses            Float?
+// หมวดหมู่ค่าใช้จ่าย
+model expensecategory {
+  id          Int       @id @default(autoincrement())
+  name        String    // ชื่อประเภท
+  code        String    @unique // รหัสอ้างอิง เช่น "BODY_REPAIR", "SERVICE_COST"
+  type        String    // ประเภท: "EXPENSE" หรือ "PROMOTION"
+  expenses    carExpense[]
 
-  car car @relation(fields: [car_id], references: [car_id])
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+}
 
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
+// รายการค่าใช้จ่ายของรถ
+model carExpense {
+  id            Int       @id @default(autoincrement())
+  car_id        Int
+  category_id   Int
+  amount        Float
+  description   String?   // รายละเอียดเพิ่มเติม
+  receipt_url   String?   // URL รูปใบเสร็จ (ถ้ามี)
+  
+  car           car       @relation(fields: [car_id], references: [car_id])
+  category      expensecategory @relation(fields: [category_id], references: [id])
+  
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+}
+
+// สรุปค่าใช้จ่ายรวมของรถ
+model carExpenseSummary {
+  id                      Int     @id @default(autoincrement())
+  car_id                  Int     @unique
+  total_expenses          Float   @default(0)
+  total_promotion_expenses Float   @default(0)
+  final_profit            Float   @default(0)
+  
+  car                     car     @relation(fields: [car_id], references: [car_id])
+  
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+  deleted_at             DateTime?
 }
 
 // หมวดหมู่สถานะการอนุมัติและการจอง
@@ -385,7 +401,7 @@ model carDocumentTracking {
   fp_due_date            DateTime?
   book_close_date        DateTime?
   book_sent_to_bank_date DateTime?
-  transfer_status        transferStatus? @default(pending) // enum
+  transfer_status        String?
   book_record            String?
   installment_amount     Float?
   installment_number     Int?
@@ -469,6 +485,7 @@ model reservation {
   customer_id      Int
   car_id           Int
   reservation_date DateTime
+  due_date         DateTime?
   status           String
   note             String?
 
@@ -523,6 +540,9 @@ model employee {
   system_logs           SystemLog[]
 
   refreshTokens RefreshToken?
+
+  reported_tickets    SupportTicket[] @relation("TicketReporter")
+  ticket_responses    TicketResponse[]
 
   @@index([email])
 }
@@ -670,6 +690,7 @@ model liveSchedule {
   start_datetime DateTime
   end_datetime   DateTime
   description    String?
+  status         String?
 
   branch branch @relation(fields: [branch_id], references: [branch_id])
 }
@@ -754,6 +775,10 @@ model Admin {
   system_logs   SystemLog[]
   refreshTokens RefreshToken?
 
+  reported_tickets    SupportTicket[] @relation("TicketReporter")
+  assigned_tickets    SupportTicket[] @relation("TicketAssignee")
+  ticket_responses    TicketResponse[]
+
   @@map("admins")
 }
 
@@ -793,4 +818,98 @@ enum LogLevel {
   info
   warning
   error
+}
+
+// Enum สำหรับสถานะของ Ticket
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+// Enum สำหรับความสำคัญของ Ticket
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+// Enum สำหรับประเภทของ Ticket
+enum TicketCategory {
+  bug
+  feature_request
+  question
+  other
+}
+
+// โมเดลหลักสำหรับ Ticket
+model SupportTicket {
+  id          Int            @id @default(autoincrement())
+  ticket_code String         @unique // เช่น TIC-2024-0001
+  title       String
+  description String
+  status      TicketStatus   @default(open)
+  priority    TicketPriority @default(medium)
+  category    TicketCategory @default(other)
+
+  // ผู้แจ้งปัญหา (อาจจะเป็น employee หรือ admin)
+  reporter_type String      // "employee" หรือ "admin"
+  employee_id   Int?
+  admin_id      Int?
+  employee      employee?    @relation("TicketReporter", fields: [employee_id], references: [employee_id])
+  admin         Admin?       @relation("TicketReporter", fields: [admin_id], references: [id])
+
+  // ผู้รับผิดชอบ ticket
+  assignee_id   Int?
+  assignee      Admin?       @relation("TicketAssignee", fields: [assignee_id], references: [id])
+
+  // ความสัมพันธ์กับการตอบกลับ
+  responses     TicketResponse[]
+  attachments   TicketAttachment[]
+
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  resolved_at   DateTime?
+  closed_at     DateTime?
+
+  @@index([ticket_code])
+  @@index([status])
+}
+
+// โมเดลสำหรับการตอบกลับ
+model TicketResponse {
+  id           Int       @id @default(autoincrement())
+  ticket_id    Int
+  message      String
+  
+  // ผู้ตอบกลับ
+  responder_type String  // "employee" หรือ "admin"
+  employee_id    Int?
+  admin_id       Int?
+  employee       employee? @relation(fields: [employee_id], references: [employee_id])
+  admin          Admin?    @relation(fields: [admin_id], references: [id])
+
+  ticket        SupportTicket @relation(fields: [ticket_id], references: [id])
+  attachments   TicketAttachment[]
+
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+}
+
+// โมเดลสำหรับไฟล์แนบ
+model TicketAttachment {
+  id           Int            @id @default(autoincrement())
+  file_name    String
+  file_url     String
+  file_type    String
+  file_size    Int
+  
+  ticket_id    Int?
+  response_id  Int?
+  ticket       SupportTicket?  @relation(fields: [ticket_id], references: [id])
+  response     TicketResponse? @relation(fields: [response_id], references: [id])
+
+  created_at   DateTime       @default(now())
 }

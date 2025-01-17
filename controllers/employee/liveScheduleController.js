@@ -74,7 +74,8 @@ const createLiveSchedule = async (req, res) => {
         branch_id,
         start_datetime,
         end_datetime,
-        description
+        description,
+        status
     } = req.body;
 
     try {
@@ -83,7 +84,8 @@ const createLiveSchedule = async (req, res) => {
             branch_id,
             start_datetime,
             end_datetime,
-            description
+            description,
+            status
         });
         res.status(201).json(newSchedule);
     } catch (error) {
@@ -100,7 +102,8 @@ const updateLiveSchedule = async (req, res) => {
         branch_id,
         start_datetime,
         end_datetime,
-        description
+        description,
+        status
     } = req.body;
 
     try {
@@ -111,7 +114,8 @@ const updateLiveSchedule = async (req, res) => {
                 branch_id,
                 start_datetime,
                 end_datetime,
-                description
+                description,
+                status
             }
         );
         res.json(updatedSchedule);

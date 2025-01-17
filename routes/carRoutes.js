@@ -33,6 +33,10 @@ router.route('/:car_id/expenses')
     .get(authenticateToken, asyncHandler(financialController.getExpenseRecords))
     .post(authenticateToken, asyncHandler(financialController.addExpenseRecord));
 
+router.route('/:car_id/expenses/:expense_id')
+    .patch(authenticateToken, asyncHandler(financialController.updateExpenseRecord))
+    .delete(authenticateToken, asyncHandler(financialController.deleteExpenseRecord));
+
 // Document routes
 router.route('/:car_id/documents')
     .get(authenticateToken, asyncHandler(documentController.getCarDocuments))

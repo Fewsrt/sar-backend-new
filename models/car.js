@@ -46,14 +46,51 @@ async function getFinancialDetails(car_id) {
 }
 
 async function addExpense(car_id, data) {
-    return await prisma.carExpenseDetails.create({
-        data: { ...data, car_id }
+    return await prisma.carExpense.create({
+        data: {
+            car_id,
+            ...data
+        },
+        include: {
+            category: true
+        }
     });
 }
 
 async function getExpenses(car_id) {
-    return await prisma.carExpenseDetails.findMany({
-        where: { car_id }
+    return await prisma.carExpense.findMany({
+        where: { 
+            car_id,
+            deleted_at: null
+        },
+        include: {
+            category: true
+        },
+        orderBy: {
+            created_at: 'desc'
+        }
+    });
+}
+
+async function updateExpense(expense_id, data) {
+    return await prisma.carExpense.update({
+        where: { id: expense_id },
+        data: {
+            ...data,
+            updated_at: new Date()
+        },
+        include: {
+            category: true
+        }
+    });
+}
+
+async function deleteExpense(expense_id) {
+    return await prisma.carExpense.update({
+        where: { id: expense_id },
+        data: { 
+            deleted_at: new Date()
+        }
     });
 }
 
@@ -333,6 +370,8 @@ module.exports = {
     getFinancialDetails,
     addExpense,
     getExpenses,
+    updateExpense,
+    deleteExpense,
 
     // New document exports
     updateDocuments,

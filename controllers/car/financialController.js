@@ -1,4 +1,4 @@
-const { updateFinancialDetails, getFinancialDetails, addExpense, getExpenses } = require('../../models/car');
+const { updateFinancialDetails, getFinancialDetails, addExpense, getExpenses, updateExpense, deleteExpense } = require('../../models/car');
 
 // อัพเดทข้อมูลการเงิน
 async function updateFinancial(req, res) {
@@ -91,9 +91,54 @@ async function getExpenseRecords(req, res) {
     }
 }
 
+// อัพเดทค่าใช้จ่าย
+async function updateExpenseRecord(req, res) {
+    try {
+        const { expense_id } = req.params;
+        const expenseData = req.body;
+        
+        const updatedExpense = await updateExpense(parseInt(expense_id), expenseData);
+        
+        res.json({
+            success: true,
+            data: updatedExpense
+        });
+    } catch (error) {
+        console.error('Error updating expense:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update expense',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+}
+
+// ลบค่าใช้จ่าย
+async function deleteExpenseRecord(req, res) {
+    try {
+        const { expense_id } = req.params;
+        
+        await deleteExpense(parseInt(expense_id));
+        
+        res.json({
+            success: true,
+            message: 'Expense deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting expense:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete expense',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+}
+
 module.exports = {
     updateFinancial,
     getFinancial,
     addExpenseRecord,
-    getExpenseRecords
+    getExpenseRecords,
+    updateExpenseRecord,
+    deleteExpenseRecord
 }; 

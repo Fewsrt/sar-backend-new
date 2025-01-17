@@ -20,8 +20,12 @@ function getMonthCode(month) {
 }
 
 // ฟังก์ชันสร้างรหัสรถยนต์
-async function generateCarCode(year, month) {
+async function generateCarCode() {
     try {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+
         const yearCode = getYearCode(year);
         const monthCode = getMonthCode(month);
         const prefix = `${yearCode}${monthCode}`;
@@ -47,10 +51,7 @@ async function generateCarCode(year, month) {
         const carCode = `${prefix}${String(nextNumber).padStart(4, '0')}`;
 
         return {
-            success: true,
             car_code: carCode,
-            prefix: prefix,
-            sequence: nextNumber,
             year: year,
             month: month
         };

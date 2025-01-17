@@ -63,7 +63,8 @@ const createLiveSchedule = async ({
     branch_id,
     start_datetime,
     end_datetime,
-    description
+    description,
+    status
 }) => {
     return await prisma.liveSchedule.create({
         data: {
@@ -71,7 +72,8 @@ const createLiveSchedule = async ({
             branch_id: parseInt(branch_id),
             start_datetime: new Date(start_datetime),
             end_datetime: new Date(end_datetime),
-            description
+            description,
+            status
         },
         include: {
             branch: true,
@@ -85,7 +87,8 @@ const updateLiveSchedule = async (liveId, {
     branch_id,
     start_datetime,
     end_datetime,
-    description
+    description,
+    status
 }) => {
     return await prisma.liveSchedule.update({
         where: { live_id: parseInt(liveId) },
@@ -94,7 +97,8 @@ const updateLiveSchedule = async (liveId, {
             branch_id: branch_id ? parseInt(branch_id) : undefined,
             start_datetime: start_datetime ? new Date(start_datetime) : undefined,
             end_datetime: end_datetime ? new Date(end_datetime) : undefined,
-            description
+            description,
+            status
         },
         include: {
             branch: true,

@@ -48,6 +48,7 @@ const createReservation = async ({
     customer_id,
     car_id,
     reservation_date,
+    due_date,
     status,
     note
 }) => {
@@ -56,6 +57,7 @@ const createReservation = async ({
             customer_id: parseInt(customer_id),
             car_id: parseInt(car_id),
             reservation_date: new Date(reservation_date),
+            due_date: new Date(due_date),
             status,
             note
         },
