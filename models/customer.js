@@ -139,47 +139,26 @@ const deleteCustomer = async (customerId) => {
     });
 };
 
-// ฟังก์ชันเพื่อค้นหารหัสลูกค้า C ล่าสุด
+// ฟังก์ชันค้นหารหัสลูกค้า C ล่าสุด
 const getLastCustomerCodeC = async () => {
-    const lastCustomer = await prisma.customer.findFirst({
-        where: {
-            customer_code: {
-                startsWith: 'C',
+    try {
+        const lastCustomer = await prisma.customer.findFirst({
+            where: {
+                customer_code: {
+                    startsWith: 'C',
+                    mode: 'insensitive' // ค้นหาทั้งตัวพิมพ์เล็กและใหญ่
+                }
             },
-        },
-        orderBy: {
-            customer_code: 'desc',
-        },
-        select: {
-            customer_code: true,
-            name: true,
-            branch: true,
-            phone: true,
-            email: true,
-            address: true,
-            subdistrict: {
-                select: {
-                    name_th: true,
-                    name_en: true,
-                },
-            },
-            district: {
-                select: {
-                    name_th: true,
-                    name_en: true,
-                },
-            },
-            province: {
-                select: {
-                    name_th: true,
-                    name_en: true,
-                },
-            },
-            postal_code: true,
-            tax_id: true,
-        },
-    });
-    return lastCustomer ? lastCustomer.customer_code : null;
+            orderBy: {
+                customer_code: 'desc'
+            }
+        });
+
+        return lastCustomer?.customer_code || null;
+    } catch (error) {
+        console.error('Error in getLastCustomerCodeC:', error);
+        throw error;
+    }
 };
 
 module.exports = {

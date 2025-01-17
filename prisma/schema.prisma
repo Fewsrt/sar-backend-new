@@ -241,6 +241,7 @@ model carFinancialDetails {
   id                   Int    @id @default(autoincrement())
   car_id               Int
   sale_price           Float?
+  installment_price    Float?
   net_cost             Float?
   gross_profit         Float?
   purchase_price       Float?
@@ -252,6 +253,7 @@ model carFinancialDetails {
   transfer_finance     Float?
   car_commission       Float?
   down_payment         Float?
+  interest_rate        Float?
   total_revenue        Float?
   approval_amount      Float?
   expected_income      Float?
@@ -438,6 +440,15 @@ model carGeneralInfo {
   id               Int       @id @default(autoincrement())
   car_id           Int
   fp_name          String?
+  ge_price         Int?
+  kk_price         Int?
+  scb_price        Int?
+  t_price          Int?
+  installment_help Int?
+  cashback         Int?
+  other_promotions Int?
+  car_detail       String?
+  insurance        String?
   promotion_detail String?
   tracking_note    String?
   note             String?

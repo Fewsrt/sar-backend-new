@@ -1,6 +1,34 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Function to generate invoice number: PV-YYMM-XXXX
+async function generateInvoiceNumber() {
+    const today = new Date();
+    const year = today.getFullYear().toString().slice(-2);
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const prefix = `PV-${year}${month}-`;
+
+    // Find latest invoice number for current month
+    const latestInvoice = await prisma.purchaseTaxInvoice.findFirst({
+        where: {
+            invoice_number: {
+                startsWith: prefix
+            }
+        },
+        orderBy: {
+            invoice_number: 'desc'
+        }
+    });
+
+    let nextNumber = 1;
+    if (latestInvoice) {
+        const currentNumber = parseInt(latestInvoice.invoice_number.split('-')[2]);
+        nextNumber = currentNumber + 1;
+    }
+
+    return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+}
+
 // Get all purchase tax invoices
 const getAllPurchaseTaxInvoices = async () => {
     return await prisma.purchaseTaxInvoice.findMany({
@@ -55,22 +83,22 @@ const getPurchaseTaxInvoicesByCarId = async (carId) => {
     });
 };
 
-// Create purchase tax invoice
+// Create purchase tax invoice with auto-generated invoice number
 const createPurchaseTaxInvoice = async ({
-    car_id,
     invoice_date,
-    invoice_number,
     supplier_id,
     product_value_before_vat,
     vat_7_percent,
     product_value_incl_operations,
     no_vat
 }) => {
+    // Generate invoice number
+    const invoice_number = await generateInvoiceNumber();
+
     return await prisma.purchaseTaxInvoice.create({
         data: {
-            car_id: parseInt(car_id),
             invoice_date: new Date(invoice_date),
-            invoice_number,
+            invoice_number, // Auto-generated
             supplier_id: parseInt(supplier_id),
             product_value_before_vat: product_value_before_vat ? parseFloat(product_value_before_vat) : null,
             vat_7_percent: vat_7_percent ? parseFloat(vat_7_percent) : null,
@@ -78,7 +106,7 @@ const createPurchaseTaxInvoice = async ({
             no_vat: Boolean(no_vat)
         },
         include: {
-            car: true,
+            carTaxDetails: true,
             supplier: true,
         },
     });
@@ -104,7 +132,7 @@ const updatePurchaseTaxInvoice = async (purchaseInvoiceId, {
             no_vat: no_vat !== undefined ? Boolean(no_vat) : undefined
         },
         include: {
-            car: true,
+            carTaxDetails: true,
             supplier: true,
         },
     });

@@ -128,19 +128,28 @@ const deleteCustomer = async (req, res) => {
 const getNewCustomerCodeC = async (req, res) => {
     try {
         // ค้นหาล่าสุดของรหัสลูกค้า C ในฐานข้อมูล
-        const lastCustomerCode = await customerModel.getLastCustomerCodeC(); // ฟังก์ชันนี้ต้องสร้างใน models/customer.js
+        const lastCustomerCode = await customerModel.getLastCustomerCodeC();
         let newCodeNumber = 1;
 
         if (lastCustomerCode) {
             // แยกหมายเลขจากรหัสลูกค้า C ล่าสุด
-            const lastNumber = parseInt(lastCustomerCode.slice(1), 10);
-            newCodeNumber = lastNumber + 1; // เพิ่มหมายเลข
+            const matches = lastCustomerCode.match(/C(\d+)/);
+            if (matches && matches[1]) {
+                newCodeNumber = parseInt(matches[1], 10) + 1;
+            }
         }
 
-        const newCustomerCode = `C${String(newCodeNumber).padStart(3, '0')}`; // สร้างรหัสลูกค้าใหม่
-        res.json({ customerCode: newCustomerCode });
+        const newCustomerCode = `C${String(newCodeNumber).padStart(3, '0')}`;
+        res.json({ 
+            success: true,
+            customerCode: newCustomerCode 
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Unable to create customer code' });
+        console.error('Error generating customer code:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to create customer code' 
+        });
     }
 };
 
