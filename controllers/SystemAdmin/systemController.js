@@ -27,7 +27,7 @@ const authController = {
                 throw new AppError('Invalid credentials', 401);
             }
 
-            // Generate tokens แบบเดียวกับ authController
+            // Generate tokens
             const [accessToken, refreshToken] = await Promise.all([
                 generateAccessToken({
                     admin_id: admin.id,
@@ -41,41 +41,11 @@ const authController = {
                 })
             ]);
 
-            // Store refresh token
+            // Store refresh token in database
             await storeRefreshToken(null, admin.id, refreshToken);
 
-            // Update last login
-            await prisma.admin.update({
-                where: { id: admin.id },
-                data: { last_login: new Date() }
-            });
-
-            // Log login action
-            await prisma.systemLog.create({
-                data: {
-                    level: 'info',
-                    type: 'auth',
-                    user_id: admin.id,
-                    action: 'Login',
-                    details: {
-                        username: admin.username,
-                        timestamp: new Date()
-                    },
-                    ip: req.ip,
-                    user_agent: req.headers['user-agent']
-                }
-            });
-
-            // Remove sensitive data
-            delete admin.password;
-
-            // Mark user as online after successful login
-            await onlineStatusService.markUserOnline('admin', admin.id, {
-                name: admin.name,
-                role: admin.role
-            });
-
             res.json({
+                success: true,
                 accessToken,
                 refreshToken,
                 admin: {
@@ -89,7 +59,7 @@ const authController = {
 
         } catch (error) {
             console.error('Login error:', error);
-            throw new AppError(error.message || 'Internal server error', error.statusCode || 500);
+            throw error;
         }
     },
 
