@@ -4,14 +4,12 @@ const { findEmployeeByEmail } = require('../../models/employee');
 const { generateAccessToken, generateRefreshToken } = require('./tokenController');
 const { storeRefreshToken, getRefreshToken } = require('../../models/userModel');
 const prisma = require('../../config/db');
-const onlineStatusService = require('../../services/onlineStatusService');
 
 const login = async (req, res) => {
     const start = process.hrtime();
     const { email, password } = req.body;
 
     try {
-        // ดึงข้อมูลจาก database
         const employee = await findEmployeeByEmail(email);
 
         if (!employee) {
@@ -26,7 +24,6 @@ const login = async (req, res) => {
             return res.status(500).json({ error: 'Invalid employee data' });
         }
 
-        // ทำ password validation และ token generation แบบ parallel
         const [isPasswordValid, accessToken, refreshToken] = await Promise.all([
             bcrypt.compare(password, employee.password),
             generateAccessToken({
@@ -53,17 +50,8 @@ const login = async (req, res) => {
             return res.status(403).json({ message: 'Please change your password on first login' });
         }
 
-        // Store refresh token
+        // Store refresh token in database
         await storeRefreshToken(employee.employee_code, null, refreshToken);
-
-        // Mark user as online
-        await onlineStatusService.markUserOnline('employee', employee.employee_id, {
-            name: employee.full_name,
-            role: employee.role,
-            employee_code: employee.employee_code,
-            position: employee.position,
-            branch_id: employee.branch_id
-        });
 
         const end = process.hrtime(start);
         console.log(`Login successful after ${end[0]}s ${end[1] / 1000000}ms`);
@@ -251,13 +239,6 @@ const logout = async (req, res) => {
             return res.status(400).json({ message: 'Invalid token' });
         }
 
-        // Mark user as offline (ถ้าจำเป็น)
-        // if (decoded.admin_id) {
-        //     await onlineStatusService.markAdminOffline(decoded.admin_id);
-        // } else {
-        //     await onlineStatusService.markUserOffline(decoded.employee_code);
-        // }
-
         res.json({ message: 'Logged out successfully' });
     } catch (error) {
         console.error('Logout error:', error);
@@ -281,14 +262,14 @@ const loginSuperAdmin = async (req, res) => {
 
         const accessToken = generateAccessToken({
             admin_id: admin.id,
-            role: admin.role // เพิ่ม role ที่นี่
+            role: admin.role
         });
         const refreshToken = generateRefreshToken({
             admin_id: admin.id
         });
 
-        // บันทึก refresh token
-        await storeRefreshToken(null, admin.id, refreshToken); // ส่ง admin.id ที่เป็น Int
+        // Store refresh token in database
+        await storeRefreshToken(null, admin.id, refreshToken);
 
         res.json({
             accessToken,
