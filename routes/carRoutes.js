@@ -93,4 +93,10 @@ router.route('/:car_id/info')
     .get(authenticateToken, asyncHandler(generalInfoController.getCarInfo))
     .put(authenticateToken, asyncHandler(generalInfoController.updateCarInfo));
 
+// Permanent delete route (ต้องวางก่อน route /:car_id ทั่วไป)
+router.delete('/:car_id/permanent',
+    authenticateToken,
+    asyncHandler(mainController.permanentDeleteCar)
+);
+
 module.exports = router;

@@ -13,6 +13,7 @@ const {
     removeCarsByYear,
     getStatistics,
     findCarByCode,
+    permanentDeleteCarById,
 } = require('./existing-car-functions');  // แยกฟังก์ชันเดิมไปไว้อีกไฟล์
 
 // Financial functions
@@ -364,7 +365,7 @@ module.exports = {
     removeCarsByYear,
     getStatistics,
     findCarByCode,
-
+    permanentDeleteCarById,
     // New financial exports
     updateFinancialDetails,
     getFinancialDetails,

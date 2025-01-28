@@ -439,7 +439,8 @@ model carAssociatedEntities {
 model carGeneralInfo {
   id               Int       @id @default(autoincrement())
   car_id           Int
-  fp_name          String?
+  fp_id            Int
+  fp_name          floorplanfinancing? @relation(fields: [fp_id], references: [id])
   ge_price         Int?
   kk_price         Int?
   scb_price        Int?
@@ -453,7 +454,9 @@ model carGeneralInfo {
   tracking_note    String?
   note             String?
   car_image_link   String?
+  car_details_link   String?
   car_release_date DateTime?
+  google_photo_link String?
 
   car car @relation(fields: [car_id], references: [car_id])
 
@@ -923,4 +926,14 @@ model TicketAttachment {
   response     TicketResponse? @relation(fields: [response_id], references: [id])
 
   created_at   DateTime       @default(now())
+}
+
+model floorplanfinancing {
+  id           Int            @id @default(autoincrement())
+  name         String
+  amount       Int?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  carGeneralInfo carGeneralInfo[]
 }

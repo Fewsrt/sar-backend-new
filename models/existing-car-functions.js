@@ -204,7 +204,7 @@ async function createCar(data) {
     });
 
     // สร้าง Google Drive folder และอัพเดท car_image_link
-    await createFolderInGoogleDrive(newCar.car_id, data.car_code);
+    // await createFolderInGoogleDrive(newCar.car_id, data.car_code);
 
     return newCar;
 }
@@ -353,66 +353,157 @@ async function updateCarById(car_id, data) {
 
 // Delete (Soft Delete)
 async function deleteCarById(car_id) {
-    const now = new Date();
-    return await prisma.$transaction([
-        prisma.car.update({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carFinancialDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carExpenseDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carApprovalDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carLocationDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carTaxDetails.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carDocumentTracking.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carAssociatedEntities.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.carGeneralInfo.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        // เพิ่มการลบข้อมูลที่เกี่ยวข้องอื่น ๆ ที่จำเป็น
-        prisma.carInspection.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.maintenance.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.accounting.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.customerPurchaseHistory.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-        prisma.bankTransferTracking.updateMany({
-            where: { car_id },
-            data: { deleted_at: now }
-        }),
-    ]);
+    try {
+        const now = new Date();
+        return await prisma.$transaction(async (tx) => {
+            // ลบข้อมูลที่เกี่ยวข้อง
+            await tx.carFinancialDetails.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carExpense.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carApprovalDetails.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carLocationDetails.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carTaxDetails.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carDocumentTracking.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carAssociatedEntities.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carGeneralInfo.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.carInspection.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.maintenance.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.accounting.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.customerPurchaseHistory.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            await tx.bankTransferTracking.updateMany({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+
+            // อัพเดทข้อมูลหลักของรถเป็นลำดับสุดท้าย
+            return await tx.car.update({
+                where: { car_id },
+                data: { deleted_at: now }
+            });
+        });
+    } catch (error) {
+        console.error('Error in deleteCarById:', error);
+        throw error;
+    }
+}
+
+// Hard Delete
+async function permanentDeleteCarById(car_id) {
+    try {
+        return await prisma.$transaction(async (tx) => {
+            // ลบข้อมูลที่เกี่ยวข้องก่อน
+            await tx.carFinancialDetails.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carExpense.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carApprovalDetails.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carLocationDetails.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carTaxDetails.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carDocumentTracking.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carAssociatedEntities.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carGeneralInfo.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.carInspection.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.maintenance.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.accounting.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.customerPurchaseHistory.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.bankTransferTracking.deleteMany({
+                where: { car_id }
+            });
+
+            await tx.reservation.deleteMany({
+                where: { car_id }
+            });
+
+            // ลบข้อมูลหลักของรถเป็นลำดับสุดท้าย
+            return await tx.car.delete({
+                where: { car_id }
+            });
+        });
+    } catch (error) {
+        console.error('Error in permanentDeleteCarById:', error);
+        throw error;
+    }
 }
 
 // Find All Cars with advanced filtering
@@ -689,4 +780,5 @@ module.exports = {
     removeCarsByYear,
     getStatistics,
     findCarByCode,
+    permanentDeleteCarById,
 };

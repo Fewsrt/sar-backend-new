@@ -99,7 +99,7 @@ const deleteEmployee = async (employeeId) => {
     });
 
     // 5. Update cars to remove employee reference
-    await prisma.car.updateMany({
+    await prisma.carAssociatedEntities.updateMany({
       where: { salesperson_id: parseInt(employeeId) },
       data: { salesperson_id: null }
     });

@@ -5,7 +5,7 @@ const cors = require('cors');
 
 // CORS options
 const corsOptions = {
-  origin: ['https://liff.line.me/2006519613-MpmgYvkZ', 'https://sangaroonerp.firebaseapp.com', 'http://localhost:8080'],
+  origin: ['https://liff.line.me/2006519613-MpmgYvkZ', 'https://sangaroonerp.firebaseapp.com', 'http://localhost:8080', 'http://192.168.88.87:8080'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // เพิ่ม PATCH ที่นี่
   allowedHeaders: ['Content-Type', 'Authorization', 'x-line-request'],
   credentials: true,

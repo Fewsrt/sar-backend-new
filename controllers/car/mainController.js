@@ -1,4 +1,4 @@
-const { createCar, findCarById, updateCarById, deleteCarById, findAllCars, findCarByCode } = require('../../models/car');
+const { createCar, findCarById, updateCarById, deleteCarById, findAllCars, findCarByCode, permanentDeleteCarById } = require('../../models/car');
 
 // ดึงข้อมูลรถทั้งหมด
 async function getAllCars(req, res) {
@@ -161,11 +161,42 @@ async function getCarByCode(req, res) {
     }
 }
 
+// Controller สำหรับลบข้อมูลรถถาวร (Hard Delete)
+async function permanentDeleteCar(req, res) {
+    try {
+        const car_id = parseInt(req.params.car_id);
+        
+        // ตรวจสอบว่ารถมีอยู่หรือไม่
+        const car = await findCarById(car_id);
+        if (!car) {
+            return res.status(404).json({ error: 'Car not found' });
+        }
+
+        // ตรวจสอบสิทธิ์พิเศษ (ถ้าต้องการ)
+        if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+            return res.status(403).json({ error: 'Permission denied for permanent deletion' });
+        }
+
+        await permanentDeleteCarById(car_id);
+        res.status(200).json({ 
+            message: 'Car permanently deleted',
+            car_id: car_id
+        });
+    } catch (error) {
+        console.error('Error permanently deleting car:', error);
+        res.status(500).json({ 
+            error: 'Failed to permanently delete car',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+}
+
 module.exports = {
     getAllCars,
     addCar,
     getCar,
     updateCar,
     deleteCar,
-    getCarByCode
+    getCarByCode,
+    permanentDeleteCar
 }; 

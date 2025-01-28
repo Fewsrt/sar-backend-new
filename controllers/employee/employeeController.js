@@ -1,6 +1,7 @@
 // controllers/employeeController.js
 const employeeModel = require('../../models/employee');
 const bcrypt = require('bcryptjs');
+const { sendWelcomeEmail } = require('../../utils/emailService');
 
 // Get list of employees
 const getEmployees = async (req, res) => {
@@ -29,10 +30,18 @@ const getEmployeeById = async (req, res) => {
 
 // Create a new employee
 const createEmployee = async (req, res) => {
-    const { employee_code, title, full_name, nickname, position, branch_id, phone, email, profile_picture, employment_status = 'active', employee_card = 'yes', line_uuid, isFirstLogin, role } = req.body;
+    const { 
+        employee_code, title, full_name, nickname, position, 
+        branch_id, phone, email, profile_picture, 
+        employment_status = 'active', employee_card = 'yes', 
+        line_uuid, isFirstLogin = true, role 
+    } = req.body;
+
     try {
         const defaultPassword = 'Sarerp123';
         const hashedPassword = await bcrypt.hash(defaultPassword, 8);
+        
+        // Create employee in database
         const newEmployee = await employeeModel.createEmployee({
             employee_code,
             title,
@@ -50,10 +59,27 @@ const createEmployee = async (req, res) => {
             isFirstLogin,
             role,
         });
-        res.status(201).json(newEmployee);
+
+        // Send welcome email
+        try {
+            await sendWelcomeEmail(newEmployee);
+        } catch (emailError) {
+            console.error('Failed to send welcome email:', emailError);
+            // ไม่ return error เพราะพนักงานถูกสร้างแล้ว
+        }
+
+        res.status(201).json({
+            success: true,
+            data: newEmployee,
+            message: 'Employee created successfully and welcome email sent'
+        });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Unable to create employee' });
+        console.error('Error creating employee:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Unable to create employee',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
