@@ -80,9 +80,36 @@ const generateLineToken = async (req, res) => {
     try {
         const { line_uuid } = req.body;
 
-        // Find employee by LINE UUID
+        // Find employee by LINE UUID with branch information
         const employee = await prisma.employee.findFirst({
-            where: { line_uuid }
+            where: { line_uuid },
+            include: {
+                branch: {
+                    select: {
+                        branch_id: true,
+                        branch_name: true,
+                        latitude: true,
+                        longitude: true,
+                        radius: true,
+                        address: true,
+                        province: {
+                            select: {
+                                name_th: true
+                            }
+                        },
+                        district: {
+                            select: {
+                                name_th: true
+                            }
+                        },
+                        subdistrict: {
+                            select: {
+                                name_th: true
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         if (!employee) {
@@ -95,7 +122,8 @@ const generateLineToken = async (req, res) => {
             employee_code: employee.employee_code,
             full_name: employee.full_name,
             position: employee.position,
-            role: employee.role
+            role: employee.role,
+            branch_id: employee.branch_id // เพิ่ม branch_id ใน token
         });
 
         const refreshToken = generateRefreshToken({
@@ -105,6 +133,12 @@ const generateLineToken = async (req, res) => {
         // Store refresh token
         await storeRefreshToken(employee.employee_code, null, refreshToken);
 
+        // จัดรูปแบบข้อมูลที่จะส่งกลับ
+        const formattedBranch = employee.branch ? {
+            ...employee.branch,
+            full_address: `${employee.branch.address || ''} ${employee.branch.subdistrict?.name_th || ''} ${employee.branch.district?.name_th || ''} ${employee.branch.province?.name_th || ''}`
+        } : null;
+
         res.json({
             accessToken,
             refreshToken,
@@ -113,7 +147,8 @@ const generateLineToken = async (req, res) => {
                 employee_code: employee.employee_code,
                 full_name: employee.full_name,
                 position: employee.position,
-                role: employee.role
+                role: employee.role,
+                branch: formattedBranch // เพิ่มข้อมูลสาขา
             }
         });
     } catch (error) {

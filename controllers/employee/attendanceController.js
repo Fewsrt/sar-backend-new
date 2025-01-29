@@ -1,4 +1,7 @@
 // controllers/attendanceController.js
+const fs = require('fs');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 const attendanceModel = require('../../models/attendance');
 
 // Get list of attendance records
@@ -53,12 +56,57 @@ const getAttendanceByEmployeeCode = async (req, res) => {
     }
 };
 
+// ฟังก์ชันสำหรับบันทึกรูปภาพ
+const saveImage = async (base64Image, employee_code) => {
+    try {
+        // แยกส่วน header ของ base64 ออก
+        const matches = base64Image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+            throw new Error('Invalid base64 image string');
+        }
+
+        // สร้างชื่อไฟล์ที่ไม่ซ้ำกัน
+        const fileType = matches[1].split('/')[1];
+        const fileName = `${employee_code}_${uuidv4()}.${fileType}`;
+        
+        // สร้างโฟลเดอร์ถ้ายังไม่มี
+        const uploadDir = path.join(__dirname, '../../uploads/attendance');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        // บันทึกไฟล์
+        const filePath = path.join(uploadDir, fileName);
+        fs.writeFileSync(filePath, matches[2], 'base64');
+
+        // ส่งคืน path ของไฟล์ (เก็บเฉพาะ path ที่จะใช้เรียกผ่าน URL)
+        return `uploads/attendance/${fileName}`;
+    } catch (error) {
+        console.error('Error saving image:', error);
+        throw error;
+    }
+};
+
 // Create a new attendance record
 const createAttendance = async (req, res) => {
-    const { check_in_time, check_in_latitude, check_in_longitude, status, note } = req.body;
-    // ดึง employee_code จาก token หรือ req.user (สมมุติว่ามี middleware ที่ทำการตรวจสอบ token แล้วใส่ employee_code ลงใน req.user)
+    const { 
+        check_in_time, 
+        check_in_latitude, 
+        check_in_longitude, 
+        status, 
+        note,
+        check_in_image  // รับ base64 string ของรูปภาพ
+    } = req.body;
+    
     const employee_code = req.user.employee_code;
+    
     try {
+        // บันทึกรูปภาพถ้ามี
+        let image_path = null;
+        if (check_in_image) {
+            image_path = await saveImage(check_in_image, employee_code);
+        }
+
         const newAttendance = await attendanceModel.createAttendance({
             employee_code,
             check_in_time,
@@ -66,10 +114,16 @@ const createAttendance = async (req, res) => {
             check_in_longitude,
             status,
             note,
+            check_in_image: image_path  // เพิ่ม path รูปภาพ
         });
+
         res.status(201).json(newAttendance);
     } catch (error) {
-        res.status(500).json({ error: 'Unable to create attendance record' });
+        console.error('Error creating attendance record:', error);
+        res.status(500).json({ 
+            error: 'Unable to create attendance record',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
@@ -96,7 +150,6 @@ const updateAttendanceByEmployeeCode = async (req, res) => {
         res.status(500).json({ error: 'Unable to update attendance record' });
     }
 };
-
 
 // Delete attendance record by ID
 const deleteAttendance = async (req, res) => {
@@ -136,6 +189,42 @@ const getLatestAttendance = async (req, res) => {
     }
 };
 
+// Check out
+const updateCheckOut = async (req, res) => {
+    const { 
+        attendance_id,
+        check_out_time, 
+        check_out_latitude, 
+        check_out_longitude,
+        check_out_image  // รับ base64 string ของรูปภาพ check out
+    } = req.body;
+    
+    const employee_code = req.user.employee_code;
+
+    try {
+        // บันทึกรูปภาพ check out ถ้ามี
+        let image_path = null;
+        if (check_out_image) {
+            image_path = await saveImage(check_out_image, employee_code);
+        }
+
+        const updatedAttendance = await attendanceModel.updateCheckOut(attendance_id, {
+            check_out_time,
+            check_out_latitude,
+            check_out_longitude,
+            check_out_image: image_path
+        });
+
+        res.json(updatedAttendance);
+    } catch (error) {
+        console.error('Error updating check-out:', error);
+        res.status(500).json({ 
+            error: 'Unable to update check-out',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 module.exports = {
     getAttendanceRecords,
     getAttendanceById,
@@ -144,4 +233,5 @@ module.exports = {
     updateAttendanceByEmployeeCode,
     deleteAttendance,
     getLatestAttendance,
+    updateCheckOut
 };

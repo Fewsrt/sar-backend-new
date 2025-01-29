@@ -34,23 +34,35 @@ const getBranchById = async (branchId) => {
 
 // Create a new branch
 const createBranch = async (data) => {
+    // แปลง string เป็น float สำหรับ latitude และ longitude
+    const latitude = data.latitude ? parseFloat(data.latitude) : null;
+    const longitude = data.longitude ? parseFloat(data.longitude) : null;
+    const radius = data.radius ? parseInt(data.radius) : 100;
+
     return await prisma.branch.create({
-        data
+        data: {
+            ...data,
+            latitude,
+            longitude,
+            radius
+        }
     });
 };
 
 // Update branch by ID
-const updateBranch = async (branchId, { branch_name, address, subdistrict_id, district_id, province_id, postal_code, phone }) => {
+const updateBranch = async (branchId, data) => {
+    // แปลง string เป็น float สำหรับ latitude และ longitude
+    const latitude = data.latitude ? parseFloat(data.latitude) : null;
+    const longitude = data.longitude ? parseFloat(data.longitude) : null;
+    const radius = data.radius ? parseInt(data.radius) : undefined;
+
     return await prisma.branch.update({
         where: { branch_id: parseInt(branchId) },
         data: {
-            branch_name,
-            address,
-            subdistrict_id,
-            district_id,
-            province_id,
-            postal_code,
-            phone,
+            ...data,
+            latitude,
+            longitude,
+            ...(radius && { radius })
         },
     });
 };
@@ -62,10 +74,27 @@ const deleteBranch = async (branchId) => {
     });
 };
 
+// ฟังก์ชันใหม่: ค้นหาสาขาที่อยู่ในรัศมีที่กำหนด
+const findBranchesInRadius = async (lat, lng, radiusInMeters = 100) => {
+    // คำนวณระยะห่างโดยใช้ Haversine formula
+    const branches = await prisma.$queryRaw`
+        SELECT *, 
+        (6371 * acos(cos(radians(${lat})) * cos(radians(latitude)) * 
+        cos(radians(longitude) - radians(${lng})) + 
+        sin(radians(${lat})) * sin(radians(latitude)))) * 1000 AS distance
+        FROM branch
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        HAVING distance <= ${radiusInMeters}
+        ORDER BY distance;
+    `;
+    return branches;
+};
+
 module.exports = {
     getBranches,
     getBranchById,
     createBranch,
     updateBranch,
     deleteBranch,
+    findBranchesInRadius
 };

@@ -1,6 +1,13 @@
 // routes/branchRoutes.js
 const express = require('express');
-const { getBranches, getBranchById, createBranch, updateBranch, deleteBranch } = require('../controllers/employee/branchController');
+const { 
+    getBranches, 
+    getBranchById, 
+    createBranch, 
+    updateBranch, 
+    deleteBranch,
+    findNearbyBranches 
+} = require('../controllers/employee/branchController');
 const authenticateToken = require('../middleware/authenticateToken');
 
 const router = express.Router();
@@ -21,5 +28,8 @@ router.patch('/:branchId', authenticateToken, updateBranch);
 
 // Delete branch by ID
 router.delete('/:branchId', authenticateToken, deleteBranch);
+
+// เพิ่มเส้นทางใหม่
+router.get('/nearby/search', authenticateToken, findNearbyBranches);
 
 module.exports = router;

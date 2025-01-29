@@ -585,6 +585,9 @@ model branch {
   province_id    Int
   postal_code    String?
   phone          String  @unique
+  latitude       Float?  // เพิ่มละติจูดของสาขา
+  longitude      Float?  // เพิ่มลองจิจูดของสาขา
+  radius        Int?    @default(100) // รัศมีการเช็คอิน (เมตร) default 100 เมตร
 
   subdistrict  subdistrict    @relation(fields: [subdistrict_id], references: [id])
   district     district       @relation(fields: [district_id], references: [id])
@@ -598,6 +601,8 @@ model branch {
   cars            carLocationDetails[] @relation("ParkingLocation")
   cars_50_percent carLocationDetails[] @relation("CarBranch50Percent")
   sale_branch     carLocationDetails[] @relation("CarSaleBranch")
+
+  @@index([latitude, longitude]) // เพิ่ม index สำหรับการค้นหาตามพิกัด
 }
 
 // CarInspection Model

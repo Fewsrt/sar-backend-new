@@ -28,7 +28,11 @@ const getBranchById = async (req, res) => {
 
 // Create a new branch
 const createBranch = async (req, res) => {
-    const { branch_name, address, subdistrict_id, district_id, province_id, postal_code, phone } = req.body;
+    const { 
+        branch_name, address, subdistrict_id, district_id, 
+        province_id, postal_code, phone, latitude, longitude, radius 
+    } = req.body;
+    
     try {
         const newBranch = await branchModel.createBranch({
             branch_name,
@@ -38,17 +42,28 @@ const createBranch = async (req, res) => {
             province_id,
             postal_code,
             phone,
+            latitude,
+            longitude,
+            radius
         });
         res.status(201).json(newBranch);
     } catch (error) {
-        res.status(500).json({ error: 'Unable to create branch' });
+        console.error('Error creating branch:', error);
+        res.status(500).json({ 
+            error: 'Unable to create branch',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
 // Update branch by ID
 const updateBranch = async (req, res) => {
     const { branchId } = req.params;
-    const { branch_name, address, subdistrict_id, district_id, province_id, postal_code, phone } = req.body;
+    const { 
+        branch_name, address, subdistrict_id, district_id, 
+        province_id, postal_code, phone, latitude, longitude, radius 
+    } = req.body;
+    
     try {
         const updatedBranch = await branchModel.updateBranch(branchId, {
             branch_name,
@@ -58,10 +73,17 @@ const updateBranch = async (req, res) => {
             province_id,
             postal_code,
             phone,
+            latitude,
+            longitude,
+            radius
         });
         res.json(updatedBranch);
     } catch (error) {
-        res.status(500).json({ error: 'Unable to update branch' });
+        console.error('Error updating branch:', error);
+        res.status(500).json({ 
+            error: 'Unable to update branch',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
@@ -76,10 +98,31 @@ const deleteBranch = async (req, res) => {
     }
 };
 
+// เพิ่ม endpoint ใหม่สำหรับค้นหาสาขาในรัศมีที่กำหนด
+const findNearbyBranches = async (req, res) => {
+    const { lat, lng, radius } = req.query;
+    
+    try {
+        const branches = await branchModel.findBranchesInRadius(
+            parseFloat(lat),
+            parseFloat(lng),
+            parseInt(radius)
+        );
+        res.json(branches);
+    } catch (error) {
+        console.error('Error finding nearby branches:', error);
+        res.status(500).json({ 
+            error: 'Unable to find nearby branches',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 module.exports = {
     getBranches,
     getBranchById,
     createBranch,
     updateBranch,
     deleteBranch,
+    findNearbyBranches
 };
