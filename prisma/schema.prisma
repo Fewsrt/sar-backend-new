@@ -58,11 +58,6 @@ enum empCardStatus {
   no // No
 }
 
-enum attendanceStatus {
-  checked_in
-  checked_out
-}
-
 enum followUpStatus {
   interested
   reserved
@@ -74,6 +69,11 @@ enum transactionType {
   sale
   purchase
   other
+}
+
+enum VehicleType {
+  CAR
+  MOTORCYCLE
 }
 
 model color {
@@ -182,9 +182,10 @@ model car_submodel_variant {
 
 // หมวดหมู่ข้อมูลพื้นฐานของรถ
 model car {
-  car_id                     Int             @id @default(autoincrement())
-  car_code                   String          @unique
-  status                     carStatus       @default(car_entry)
+  car_id                     Int         @id @default(autoincrement())
+  car_code                   String      @unique
+  vehicle_type               VehicleType @default(CAR)
+  status                     carStatus   @default(car_entry)
   car_tracking               String?
   purchase_date              DateTime?
   license_plate_no           String?
@@ -192,20 +193,43 @@ model car {
   new_license_plate_no       String?
   new_license_plate_province String?
   color_id                   Int?
-  color                      color?          @relation(fields: [color_id], references: [color_id])
+  color                      color?      @relation(fields: [color_id], references: [color_id])
   chassis_no                 String?
   engine_no                  String?
-  brand_id                   Int
-  model_id                   Int
-  submodel_id                Int
+  brand_id                   Int?
+  model_id                   Int?
+  submodel_id                Int?
   mileage                    Int?
   registration_date          DateTime?
   registration_date_year     Int?
   registration_date_month    Int?
   registration_date_day      Int?
-  day              Int?
-  month            Int?
-  year             Int?
+  day                        Int?
+  month                      Int?
+  year                       Int?
+
+  // แยก fields สำหรับรถยนต์
+  car_brand_id    Int?
+  car_model_id    Int?
+  car_submodel_id Int?
+
+  // fields สำหรับกรอกข้อมูลมอเตอร์ไซค์เอง
+  moto_brand_name    String? // ชื่อยี่ห้อ
+  moto_model_name    String? // ชื่อรุ่น
+  moto_submodel_name String? // ชื่อรุ่นย่อย
+
+  // Relations สำหรับรถยนต์ (คงเดิม)
+  car_brand    car_brand?    @relation(fields: [car_brand_id], references: [brand_id])
+  car_model    car_model?    @relation(fields: [car_model_id], references: [model_id])
+  car_submodel car_submodel? @relation(fields: [car_submodel_id], references: [submodel_id])
+
+  // Relations สำหรับมอเตอร์ไซค์ (ยังไม่ใช้ในตอนแรก)
+  motorcycle_brand    moto_brand?    @relation(fields: [moto_brand_id], references: [brand_id])
+  motorcycle_model    moto_model?    @relation(fields: [moto_model_id], references: [model_id])
+  motorcycle_submodel moto_submodel? @relation(fields: [moto_submodel_id], references: [submodel_id])
+  moto_brand_id       Int?
+  moto_model_id       Int?
+  moto_submodel_id    Int?
 
   // Relation
   financialDetails   carFinancialDetails[]
@@ -217,9 +241,6 @@ model car {
   documentTracking   carDocumentTracking[]
   associatedEntities carAssociatedEntities[]
   generalInfo        carGeneralInfo[]
-  car_brand          car_brand?              @relation(fields: [brand_id], references: [brand_id])
-  car_model          car_model?              @relation(fields: [model_id], references: [model_id])
-  car_submodel       car_submodel?           @relation(fields: [submodel_id], references: [submodel_id])
 
   created_at              DateTime                  @default(now())
   updated_at              DateTime                  @updatedAt
@@ -231,6 +252,7 @@ model car {
   accounting              accounting[]
   customerPurchaseHistory customerPurchaseHistory[]
   bankTransferTracking    bankTransferTracking[]
+  taxInvoice              taxInvoice[]
 
   @@index([car_id])
   @@index([car_code])
@@ -268,47 +290,47 @@ model carFinancialDetails {
 
 // หมวดหมู่ค่าใช้จ่าย
 model expensecategory {
-  id          Int       @id @default(autoincrement())
-  name        String    // ชื่อประเภท
-  code        String    @unique // รหัสอ้างอิง เช่น "BODY_REPAIR", "SERVICE_COST"
-  type        String    // ประเภท: "EXPENSE" หรือ "PROMOTION"
-  expenses    carExpense[]
+  id       Int          @id @default(autoincrement())
+  name     String // ชื่อประเภท
+  code     String       @unique // รหัสอ้างอิง เช่น "BODY_REPAIR", "SERVICE_COST"
+  type     String // ประเภท: "EXPENSE" หรือ "PROMOTION"
+  expenses carExpense[]
 
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  deleted_at  DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
 }
 
 // รายการค่าใช้จ่ายของรถ
 model carExpense {
-  id            Int       @id @default(autoincrement())
-  car_id        Int
-  category_id   Int
-  amount        Float
-  description   String?   // รายละเอียดเพิ่มเติม
-  receipt_url   String?   // URL รูปใบเสร็จ (ถ้ามี)
-  
-  car           car       @relation(fields: [car_id], references: [car_id])
-  category      expensecategory @relation(fields: [category_id], references: [id])
-  
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  deleted_at    DateTime?
+  id          Int     @id @default(autoincrement())
+  car_id      Int
+  category_id Int
+  amount      Float
+  description String? // รายละเอียดเพิ่มเติม
+  receipt_url String? // URL รูปใบเสร็จ (ถ้ามี)
+
+  car      car             @relation(fields: [car_id], references: [car_id])
+  category expensecategory @relation(fields: [category_id], references: [id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
 }
 
 // สรุปค่าใช้จ่ายรวมของรถ
 model carExpenseSummary {
-  id                      Int     @id @default(autoincrement())
-  car_id                  Int     @unique
-  total_expenses          Float   @default(0)
-  total_promotion_expenses Float   @default(0)
-  final_profit            Float   @default(0)
-  
-  car                     car     @relation(fields: [car_id], references: [car_id])
-  
-  created_at             DateTime @default(now())
-  updated_at             DateTime @updatedAt
-  deleted_at             DateTime?
+  id                       Int   @id @default(autoincrement())
+  car_id                   Int   @unique
+  total_expenses           Float @default(0)
+  total_promotion_expenses Float @default(0)
+  final_profit             Float @default(0)
+
+  car car @relation(fields: [car_id], references: [car_id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
 }
 
 // หมวดหมู่สถานะการอนุมัติและการจอง
@@ -333,7 +355,7 @@ model carApprovalDetails {
 
 // หมวดหมู่ข้อมูลที่เกี่ยวข้องกับสถานที่และการจัดเก็บ
 model carLocationDetails {
-  id                   Int    @id @default(autoincrement())
+  id                   Int     @id @default(autoincrement())
   car_id               Int
   parking_id           Int?
   parking_location     branch? @relation("ParkingLocation", fields: [parking_id], references: [branch_id])
@@ -398,7 +420,7 @@ model CarSaleTaxInvoice {
 
 // หมวดหมู่การติดตามเอกสารและการจัดการทางการเงิน
 model carDocumentTracking {
-  id                     Int             @id @default(autoincrement())
+  id                     Int       @id @default(autoincrement())
   car_id                 Int
   fp_due_date            DateTime?
   book_close_date        DateTime?
@@ -407,7 +429,7 @@ model carDocumentTracking {
   book_record            String?
   installment_amount     Float?
   installment_number     Int?
-  financing              customer?       @relation("CarFinancing", fields: [financing_id], references: [customer_id])
+  financing              customer? @relation("CarFinancing", fields: [financing_id], references: [customer_id])
   financing_id           Int?
 
   car car @relation(fields: [car_id], references: [car_id])
@@ -437,25 +459,25 @@ model carAssociatedEntities {
 
 // หมวดหมู่ข้อมูลทั่วไป
 model carGeneralInfo {
-  id               Int       @id @default(autoincrement())
-  car_id           Int
-  fp_id            Int
-  fp_name          floorplanfinancing? @relation(fields: [fp_id], references: [id])
-  ge_price         Int?
-  kk_price         Int?
-  scb_price        Int?
-  t_price          Int?
-  installment_help Int?
-  cashback         Int?
-  other_promotions Int?
-  car_detail       String?
-  insurance        String?
-  promotion_detail String?
-  tracking_note    String?
-  note             String?
-  car_image_link   String?
-  car_details_link   String?
-  car_release_date DateTime?
+  id                Int                 @id @default(autoincrement())
+  car_id            Int
+  fp_id             Int?
+  fp_name           floorplanfinancing? @relation(fields: [fp_id], references: [id])
+  ge_price          Int?
+  kk_price          Int?
+  scb_price         Int?
+  t_price           Int?
+  installment_help  Int?
+  cashback          Int?
+  other_promotions  Int?
+  car_detail        String?
+  insurance         String?
+  promotion_detail  String?
+  tracking_note     String?
+  note              String?
+  car_image_link    String?
+  car_details_link  String?
+  car_release_date  DateTime?
   google_photo_link String?
 
   car car @relation(fields: [car_id], references: [car_id])
@@ -478,7 +500,7 @@ model customer {
   district_id    Int
   province_id    Int
   postal_code    String?
-  tax_id         String  
+  tax_id         String
 
   subdistrict subdistrict @relation(fields: [subdistrict_id], references: [id])
   district    district    @relation(fields: [district_id], references: [id])
@@ -495,7 +517,7 @@ model customer {
 
 // Reservation Model
 model reservation {
-  reservation_id   Int      @id @default(autoincrement())
+  reservation_id   Int       @id @default(autoincrement())
   customer_id      Int
   car_id           Int
   reservation_date DateTime
@@ -555,8 +577,13 @@ model employee {
 
   refreshTokens RefreshToken?
 
-  reported_tickets    SupportTicket[] @relation("TicketReporter")
-  ticket_responses    TicketResponse[]
+  reported_tickets SupportTicket[]  @relation("TicketReporter")
+  ticket_responses TicketResponse[]
+  salary           salary[]
+  leaverequest     leaverequest[]
+
+  work_shift_id Int?
+  work_shift    workshift? @relation(fields: [work_shift_id], references: [id])
 
   @@index([email])
 }
@@ -571,7 +598,7 @@ model bankEmployee {
   position             String
   note                 String?
   branch_id            Int?
-  branch               branch?                 @relation(fields: [branch_id], references: [branch_id])
+  branch               branch?                @relation(fields: [branch_id], references: [branch_id])
   bankTransferTracking bankTransferTracking[]
 }
 
@@ -585,9 +612,9 @@ model branch {
   province_id    Int
   postal_code    String?
   phone          String  @unique
-  latitude       Float?  // เพิ่มละติจูดของสาขา
-  longitude      Float?  // เพิ่มลองจิจูดของสาขา
-  radius        Int?    @default(100) // รัศมีการเช็คอิน (เมตร) default 100 เมตร
+  latitude       Float? // เพิ่มละติจูดของสาขา
+  longitude      Float? // เพิ่มลองจิจูดของสาขา
+  radius         Int?    @default(100) // รัศมีการเช็คอิน (เมตร) default 100 เมตร
 
   subdistrict  subdistrict    @relation(fields: [subdistrict_id], references: [id])
   district     district       @relation(fields: [district_id], references: [id])
@@ -650,11 +677,11 @@ model accounting {
 
 // Supplier Model
 model supplier {
-  supplier_id    Int     @id @default(autoincrement())
-  supplier_code  String  
-  supplier_name  String?
-  branch_name    String?
-  tax_id         String?  @db.VarChar(13)
+  supplier_id   Int     @id @default(autoincrement())
+  supplier_code String
+  supplier_name String?
+  branch_name   String?
+  tax_id        String? @db.VarChar(13)
 
   purchaseTaxInvoice purchaseTaxInvoice[]
   cars               carAssociatedEntities[] @relation("CarPurchaseFrom")
@@ -685,10 +712,18 @@ model bankTransferTracking {
   bankEmployee bankEmployee @relation(fields: [bank_employee_id], references: [bank_employee_id])
 }
 
+enum attendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  ON_LEAVE
+  MISSING_CHECKOUT
+}
+
 // Attendance Model
 model attendance {
   attendance_id       Int              @id @default(autoincrement())
-  employee_code       String // ใ้ employee_code แน employee_id
+  employee_code       String
   check_in_time       DateTime?
   check_out_time      DateTime?
   check_in_latitude   Float?
@@ -698,7 +733,18 @@ model attendance {
   status              attendanceStatus
   note                String?
 
-  employee employee @relation(fields: [employee_code], references: [employee_code])
+  // เพิ่มฟิลด์ใหม่
+  work_shift_id      Int?
+  late_minutes       Int?    @default(0)
+  deduction_amount   Float?  @default(0)
+  is_half_day_absent Boolean @default(false)
+
+  employee   employee   @relation(fields: [employee_code], references: [employee_code])
+  work_shift workshift? @relation(fields: [work_shift_id], references: [id])
+
+  work_hours Float?  @default(0)
+  salary     salary? @relation(fields: [salaryId], references: [id])
+  salaryId   Int?
 }
 
 // LiveSchedule Model
@@ -716,16 +762,31 @@ model liveSchedule {
 
 // TaxInvoice Model
 model taxInvoice {
-  invoice_id            Int      @id @default(autoincrement())
-  invoice_date          DateTime
-  customer_id           Int
-  sale_price_before_vat Float?
-  vat_7_percent         Float?
-  sale_price_incl_vat   Float?
-  invoice_type          String
+  invoice_id   Int      @id @default(autoincrement())
+  invoice_no   String   @unique // เลขที่ใบกำกับภาษี
+  invoice_date DateTime
 
-  customer      customer            @relation(fields: [customer_id], references: [customer_id])
-  carTaxDetails CarSaleTaxInvoice[]
+  // ข้อมูลลูกค้า
+  customer_id     Int
+  customer_tax_id String // เลขประจำตัวผู้เสียภาษี
+  customer_code   String // รหัสลูกค้า
+
+  // ข้อมูลรถ
+  car_id   Int
+  car_code String // รหัสรถยนต์
+
+  // ข้อมูลราคา
+  price_before_vat Float // ราคาก่อน VAT
+  vat_amount       Float // จำนวน VAT 7%
+  total_price      Float // ราคารวม VAT
+
+  // Relations
+  customer customer @relation(fields: [customer_id], references: [customer_id])
+  car      car      @relation(fields: [car_id], references: [car_id])
+
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  CarSaleTaxInvoice CarSaleTaxInvoice[]
 }
 
 // PurchaseTaxInvoice Model
@@ -794,9 +855,9 @@ model Admin {
   system_logs   SystemLog[]
   refreshTokens RefreshToken?
 
-  reported_tickets    SupportTicket[] @relation("TicketReporter")
-  assigned_tickets    SupportTicket[] @relation("TicketAssignee")
-  ticket_responses    TicketResponse[]
+  reported_tickets SupportTicket[]  @relation("TicketReporter")
+  assigned_tickets SupportTicket[]  @relation("TicketAssignee")
+  ticket_responses TicketResponse[]
 
   @@map("admins")
 }
@@ -874,24 +935,24 @@ model SupportTicket {
   category    TicketCategory @default(other)
 
   // ผู้แจ้งปัญหา (อาจจะเป็น employee หรือ admin)
-  reporter_type String      // "employee" หรือ "admin"
+  reporter_type String // "employee" หรือ "admin"
   employee_id   Int?
   admin_id      Int?
-  employee      employee?    @relation("TicketReporter", fields: [employee_id], references: [employee_id])
-  admin         Admin?       @relation("TicketReporter", fields: [admin_id], references: [id])
+  employee      employee? @relation("TicketReporter", fields: [employee_id], references: [employee_id])
+  admin         Admin?    @relation("TicketReporter", fields: [admin_id], references: [id])
 
   // ผู้รับผิดชอบ ticket
-  assignee_id   Int?
-  assignee      Admin?       @relation("TicketAssignee", fields: [assignee_id], references: [id])
+  assignee_id Int?
+  assignee    Admin? @relation("TicketAssignee", fields: [assignee_id], references: [id])
 
   // ความสัมพันธ์กับการตอบกลับ
-  responses     TicketResponse[]
-  attachments   TicketAttachment[]
+  responses   TicketResponse[]
+  attachments TicketAttachment[]
 
-  created_at    DateTime     @default(now())
-  updated_at    DateTime     @updatedAt
-  resolved_at   DateTime?
-  closed_at     DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  resolved_at DateTime?
+  closed_at   DateTime?
 
   @@index([ticket_code])
   @@index([status])
@@ -899,46 +960,163 @@ model SupportTicket {
 
 // โมเดลสำหรับการตอบกลับ
 model TicketResponse {
-  id           Int       @id @default(autoincrement())
-  ticket_id    Int
-  message      String
-  
+  id        Int    @id @default(autoincrement())
+  ticket_id Int
+  message   String
+
   // ผู้ตอบกลับ
-  responder_type String  // "employee" หรือ "admin"
+  responder_type String // "employee" หรือ "admin"
   employee_id    Int?
   admin_id       Int?
   employee       employee? @relation(fields: [employee_id], references: [employee_id])
   admin          Admin?    @relation(fields: [admin_id], references: [id])
 
-  ticket        SupportTicket @relation(fields: [ticket_id], references: [id])
-  attachments   TicketAttachment[]
+  ticket      SupportTicket      @relation(fields: [ticket_id], references: [id])
+  attachments TicketAttachment[]
 
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 // โมเดลสำหรับไฟล์แนบ
 model TicketAttachment {
-  id           Int            @id @default(autoincrement())
-  file_name    String
-  file_url     String
-  file_type    String
-  file_size    Int
-  
-  ticket_id    Int?
-  response_id  Int?
-  ticket       SupportTicket?  @relation(fields: [ticket_id], references: [id])
-  response     TicketResponse? @relation(fields: [response_id], references: [id])
+  id        Int    @id @default(autoincrement())
+  file_name String
+  file_url  String
+  file_type String
+  file_size Int
 
-  created_at   DateTime       @default(now())
+  ticket_id   Int?
+  response_id Int?
+  ticket      SupportTicket?  @relation(fields: [ticket_id], references: [id])
+  response    TicketResponse? @relation(fields: [response_id], references: [id])
+
+  created_at DateTime @default(now())
 }
 
 model floorplanfinancing {
-  id           Int            @id @default(autoincrement())
-  name         String
-  amount       Int?
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  id         Int      @id @default(autoincrement())
+  name       String
+  amount     Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   carGeneralInfo carGeneralInfo[]
+}
+
+model salary {
+  id           Int      @id @default(autoincrement())
+  employee_id  Int
+  base_salary  Float
+  bonus        Float?
+  deductions   Float?
+  total_salary Float
+  pay_date     DateTime
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  employee employee @relation(fields: [employee_id], references: [employee_id])
+
+  // เพิ่มความสัมพันธ์กับ attendance
+  attendances attendance[]
+}
+
+model leaverequest {
+  id          Int         @id @default(autoincrement())
+  employee_id Int
+  start_date  DateTime
+  end_date    DateTime
+  leave_type  leavetype
+  status      leavestatus @default(PENDING)
+  reason      String?
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  employee employee @relation(fields: [employee_id], references: [employee_id])
+}
+
+// Enum สำหรับประเภทการลางาน
+enum leavetype {
+  SICK
+  VACATION
+  PERSONAL
+  UNPAID
+}
+
+// Enum สำหรับสถานะการลางาน
+enum leavestatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// เพิ่ม models ใหม่สำหรับการกำหนดเวลาทำงาน
+model workshift {
+  id           Int      @id @default(autoincrement())
+  shift_name   String
+  start_time   String // เก็บในรูปแบบ "HH:mm"
+  end_time     String // เก็บในรูปแบบ "HH:mm"
+  grace_period Int // ระยะเวลาผ่อนผัน (นาที)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // ความสัมพันธ์กับพนักงาน
+  employees employee[]
+
+  // ความสัมพันธ์กับกฎการหักเงิน
+  deduction_rules deductionrule[]
+  attendance      attendance[]
+
+  @@map("workshift")
+}
+
+// เพิ่ม models สำหรับกฎการหักเงินเดือน
+model deductionrule {
+  id               Int      @id @default(autoincrement())
+  work_shift_id    Int
+  late_minutes     Int // จำนวนนาทีที่สาย
+  deduction_amount Float // จำนวนเงินที่หัก
+  is_half_day      Boolean  @default(false) // เป็นการหักครึ่งวันหรือไม่
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  work_shift workshift @relation(fields: [work_shift_id], references: [id])
+
+  @@map("deductionrule")
+}
+
+// Motorcycle Brand Model
+model moto_brand {
+  brand_id    Int          @id @default(autoincrement())
+  brand_name  String       @unique
+  moto_models moto_model[]
+  cars        car[] // รถที่ใช้แบรนด์นี้
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+// Motorcycle Model Model
+model moto_model {
+  model_id       Int             @id @default(autoincrement())
+  model_name     String
+  brand_id       Int
+  moto_brand     moto_brand      @relation(fields: [brand_id], references: [brand_id])
+  moto_submodels moto_submodel[]
+  cars           car[] // รถที่ใช้โมเดลนี้
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+// Motorcycle Submodel Model (รุ่นย่อย)
+model moto_submodel {
+  submodel_id   Int        @id @default(autoincrement())
+  submodel_name String
+  model_id      Int
+  moto_model    moto_model @relation(fields: [model_id], references: [model_id])
+  cars          car[] // รถที่ใช้รุ่นย่อยนี้
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }

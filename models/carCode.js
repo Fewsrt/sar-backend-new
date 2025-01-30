@@ -20,21 +20,24 @@ function getMonthCode(month) {
 }
 
 // ฟังก์ชันสร้างรหัสรถยนต์
-async function generateCarCode() {
+async function generateCarCode(vehicleType = 'CAR') {
     try {
         const currentDate = new Date();
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
 
+        // กำหนด prefix ตามประเภทยานพาหนะ
+        const typePrefix = vehicleType === 'CAR' ? '' : 'M';
         const yearCode = getYearCode(year);
         const monthCode = getMonthCode(month);
-        const prefix = `${yearCode}${monthCode}`;
+        const prefix = `${typePrefix}${yearCode}${monthCode}`;
 
-        // หาลำดับล่าสุดของเดือนนั้นๆ
-        const latestCar = await prisma.car.findFirst({
+        // หาลำดับล่าสุดแยกตามประเภท
+        const latestVehicle = await prisma.car.findFirst({
             where: {
                 year: year,
-                month: month
+                month: month,
+                vehicle_type: vehicleType
             },
             orderBy: {
                 car_code: 'desc'
@@ -42,8 +45,8 @@ async function generateCarCode() {
         });
 
         let nextNumber = 1;
-        if (latestCar) {
-            const currentNumber = parseInt(latestCar.car_code.slice(-4));
+        if (latestVehicle) {
+            const currentNumber = parseInt(latestVehicle.car_code.slice(-4));
             nextNumber = currentNumber + 1;
         }
 
@@ -53,11 +56,12 @@ async function generateCarCode() {
         return {
             car_code: carCode,
             year: year,
-            month: month
+            month: month,
+            vehicle_type: vehicleType
         };
     } catch (error) {
-        console.error('Error generating car code:', error);
-        throw new Error('Failed to generate car code');
+        console.error('Error generating code:', error);
+        throw new Error('Failed to generate code');
     }
 }
 

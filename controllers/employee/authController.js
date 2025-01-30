@@ -243,43 +243,47 @@ const renewAccessToken = async (req, res) => {
     }
 };
 
-const logout = async (req, res) => {
+async function logout(req, res) {
     try {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-
-        if (!token) {
-            return res.status(400).json({ message: 'Token is required' });
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Logged out successfully' 
+            });
         }
 
-        // ดึงข้อมูลจาก token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // ถอดรหัส token เพื่อดูว่าเป็น admin หรือ employee
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-        // ลบ refresh token จาก database
         if (decoded.admin_id) {
             // ถ้าเป็น admin
-            await prisma.refreshToken.delete({
-                where: {
-                    admin_id: decoded.admin_id // ลบตาม admin_id
-                }
+            await prisma.refreshToken.deleteMany({
+                where: { admin_id: decoded.admin_id }
             });
         } else if (decoded.employee_code) {
             // ถ้าเป็น employee
-            await prisma.refreshToken.delete({
-                where: {
-                    employee_code: decoded.employee_code // ลบตาม employee_code
-                }
+            await prisma.refreshToken.deleteMany({
+                where: { employee_code: decoded.employee_code }
             });
-        } else {
-            return res.status(400).json({ message: 'Invalid token' });
         }
 
-        res.json({ message: 'Logged out successfully' });
+        // ลบ cookie
+        res.clearCookie('refreshToken');
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+
     } catch (error) {
         console.error('Logout error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Logged out successfully' 
+        });
     }
-};
+}
 
 const loginSuperAdmin = async (req, res) => {
     const { username, password } = req.body;

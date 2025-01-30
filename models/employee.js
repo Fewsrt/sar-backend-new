@@ -13,6 +13,7 @@ const getEmployees = async () => {
       carInspection: true,
       carAssociatedEntities: true,
       attendance: true,
+      
     },
   });
 };
@@ -29,6 +30,7 @@ const getEmployeeById = async (employeeId) => {
       carInspection: true,
       carAssociatedEntities: true,
       attendance: true,
+      work_shift: true,
     },
   });
 };
@@ -42,6 +44,9 @@ const createEmployee = async (data) => {
 const findEmployeeByEmail = async (email) => {
   return await prisma.employee.findUnique({
     where: { email },
+    include: {
+      work_shift: true
+    }
   });
 };
 

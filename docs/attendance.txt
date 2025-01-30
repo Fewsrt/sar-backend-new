@@ -1,0 +1,150 @@
+POST http://localhost:3000/api/attendance
+
+Headers:
+Authorization: Bearer <your_jwt_token>
+Content-Type: application/json
+
+Body (raw JSON):
+{
+    "check_in_time": "2024-01-30T08:35:00.000Z",
+    "check_in_latitude": 13.756331,
+    "check_in_longitude": 100.501765,
+    "status": "PRESENT",
+    "note": "มาทำงานตามปกติ",
+    "check_in_image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..." // ถ้ามีรูปภาพ (base64)
+}
+
+PATCH http://localhost:3000/api/attendance/:attendanceId
+
+Headers:
+Authorization: Bearer <your_jwt_token>
+Content-Type: application/json
+
+Body (raw JSON):
+{
+    "check_out_time": "2024-01-30T17:30:00.000Z",
+    "check_out_latitude": 13.756331,
+    "check_out_longitude": 100.501765,
+    "status": "PRESENT",
+    "note": "เลิกงานตามปกติ",
+    "check_out_image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..." // ถ้ามีรูปภาพ (base64)
+}
+
+{
+    "attendance_id": 1,
+    "employee_code": "EMP001",
+    "check_in_time": "2024-01-30T08:35:00.000Z",
+    "check_in_latitude": 13.756331,
+    "check_in_longitude": 100.501765,
+    "status": "PRESENT",
+    "note": "มาทำงานตามปกติ",
+    "work_shift_id": 1,
+    "late_minutes": 0,
+    "deduction_amount": 0,
+    "is_half_day_absent": false,
+    "check_in_image": "uploads/attendance/EMP001_123456.jpg",
+    "employee": {
+        "employee_code": "EMP001",
+        "first_name": "John",
+        "last_name": "Doe"
+    },
+    "work_shift": {
+        "shift_name": "Shift 1",
+        "start_time": "08:30",
+        "end_time": "17:30"
+    }
+}
+
+{
+    "attendance_id": 2,
+    "employee_code": "EMP001",
+    "check_in_time": "2024-01-30T09:15:00.000Z",
+    "check_in_latitude": 13.756331,
+    "check_in_longitude": 100.501765,
+    "status": "LATE",
+    "note": "รถติด",
+    "work_shift_id": 1,
+    "late_minutes": 45,
+    "deduction_amount": 100,
+    "is_half_day_absent": false,
+    "check_in_image": "uploads/attendance/EMP001_123457.jpg",
+    "deductionInfo": {
+        "lateMinutes": 45,
+        "deductionAmount": 100,
+        "isHalfDay": false
+    },
+    "employee": {
+        "employee_code": "EMP001",
+        "first_name": "John",
+        "last_name": "Doe"
+    },
+    "work_shift": {
+        "shift_name": "Shift 1",
+        "start_time": "08:30",
+        "end_time": "17:30"
+    }
+}
+
+{
+    "attendance_id": 3,
+    "employee_code": "EMP001",
+    "check_in_time": "2024-01-30T13:30:00.000Z",
+    "check_in_latitude": 13.756331,
+    "check_in_longitude": 100.501765,
+    "status": "LATE",
+    "note": "ไปโรงพยาบาลตอนเช้า",
+    "work_shift_id": 1,
+    "late_minutes": 300,
+    "deduction_amount": 0,
+    "is_half_day_absent": true,
+    "check_in_image": "uploads/attendance/EMP001_123458.jpg",
+    "deductionInfo": {
+        "lateMinutes": 300,
+        "deductionAmount": 0,
+        "isHalfDay": true
+    },
+    "employee": {
+        "employee_code": "EMP001",
+        "first_name": "John",
+        "last_name": "Doe"
+    },
+    "work_shift": {
+        "shift_name": "Shift 1",
+        "start_time": "08:30",
+        "end_time": "17:30"
+    }
+}
+
+// เพิ่ม models ใหม่สำหรับการกำหนดเวลาทำงาน
+model workshift {
+  id               Int      @id @default(autoincrement())
+  shift_name       String
+  start_time       String   // เก็บในรูปแบบ "HH:mm"
+  end_time         String   // เก็บในรูปแบบ "HH:mm"
+  grace_period     Int      // ระยะเวลาผ่อนผัน (นาที)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // ความสัมพันธ์กับพนักงาน
+  employees        employee[]
+  
+  // ความสัมพันธ์กับกฎการหักเงิน
+  deduction_rules  deductionrule[]
+
+  @@map("workshift")
+}
+
+// เพิ่ม models สำหรับกฎการหักเงินเดือน
+model deductionrule {
+  id               Int      @id @default(autoincrement())
+  work_shift_id    Int
+  late_minutes     Int      // จำนวนนาทีที่สาย
+  deduction_amount Float    // จำนวนเงินที่หัก
+  is_half_day      Boolean  @default(false) // เป็นการหักครึ่งวันหรือไม่
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  work_shift       workshift @relation(fields: [work_shift_id], references: [id])
+
+  @@map("deductionrule")
+}

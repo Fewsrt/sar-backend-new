@@ -6,7 +6,9 @@ const {
     getTaxInvoicesByCarId,
     createTaxInvoice,
     updateTaxInvoice,
-    deleteTaxInvoice
+    deleteTaxInvoice,
+    downloadTaxInvoicePDF,
+    getCarTaxInvoices
 } = require('../controllers/employee/taxInvoiceController');
 const authenticateToken = require('../middleware/authenticateToken');
 
@@ -27,6 +29,9 @@ router.get('/car/:carId', getTaxInvoicesByCarId);
 // Get tax invoice by ID
 router.get('/:invoiceId', getTaxInvoiceById);
 
+// Get car tax invoices
+router.get('/car/:carId/tax-history', getCarTaxInvoices);
+
 // Create new tax invoice
 router.post('/', createTaxInvoice);
 
@@ -35,5 +40,8 @@ router.patch('/:invoiceId', updateTaxInvoice);
 
 // Delete tax invoice
 router.delete('/:invoiceId', deleteTaxInvoice);
+
+// เพิ่ม route สำหรับดาวน์โหลด PDF
+router.get('/:invoiceId/pdf', downloadTaxInvoicePDF);
 
 module.exports = router; 

@@ -84,8 +84,8 @@ async function createFolderInGoogleDrive(car_id, car_code) {
 // Create
 async function createCar(data) {
     const {
-        // แยกข้อมูลตาม categories
-        // ข้อมูลพื้นฐาน
+        // เพิ่ม vehicle_type
+        vehicle_type = 'CAR',
         brand_id, model_id, submodel_id, color_id,
         status, car_tracking, purchase_date,
         license_plate_no, license_plate_province,
@@ -121,13 +121,14 @@ async function createCar(data) {
         ...otherData
     } = data;
 
-    // สร้างรถยนต์ในฐานข้อมูล
-    const { car_code, year, month } = await generateCarCode();
+    // สร้างรหัสตามประเภทยานพาหนะ
+    const { car_code, year, month } = await generateCarCode(vehicle_type);
 
     const newCar = await prisma.car.create({
         data: {
-            // ข้อมูลพื้นฐาน
             car_code,
+            vehicle_type,
+            // ข้อมูลพื้นฐาน
             status,
             car_tracking,
             purchase_date,
@@ -146,18 +147,16 @@ async function createCar(data) {
             month,
 
             // Relations
-            car_brand: brand_id ? {
-                connect: { brand_id }
-            } : undefined,
-            car_model: model_id ? {
-                connect: { model_id }
-            } : undefined,
-            car_submodel: submodel_id ? {
-                connect: { submodel_id }
-            } : undefined,
-            color: color_id ? {
-                connect: { color_id }
-            } : undefined,
+            ...(vehicle_type === 'CAR' ? {
+                car_brand: brand_id ? { connect: { brand_id } } : undefined,
+                car_model: model_id ? { connect: { model_id } } : undefined,
+                car_submodel: submodel_id ? { connect: { submodel_id } } : undefined,
+                color: color_id ? { connect: { color_id } } : undefined,
+            } : {
+                motorcycle_brand: brand_id ? { connect: { brand_id } } : undefined,
+                motorcycle_model: model_id ? { connect: { model_id } } : undefined,
+                motorcycle_submodel: submodel_id ? { connect: { submodel_id } } : undefined,
+            }),
 
             // Create related records
             financialDetails: {
@@ -188,10 +187,16 @@ async function createCar(data) {
             ...otherData
         },
         include: {
-            car_brand: true,
-            car_model: true,
-            car_submodel: true,
-            color: true,
+            ...(vehicle_type === 'CAR' ? {
+                car_brand: true,
+                car_model: true,
+                car_submodel: true,
+                color: true,
+            } : {
+                motorcycle_brand: true,
+                motorcycle_model: true,
+                motorcycle_submodel: true,
+            }),
             financialDetails: true,
             expenseDetails: true,
             approvalDetails: true,
@@ -211,12 +216,15 @@ async function createCar(data) {
 
 // Read
 async function findCarById(car_id) {
-    return await prisma.car.findUnique({
+    const car = await prisma.car.findUnique({
         where: { car_id },
         include: {
             car_brand: true,
             car_model: true,
             car_submodel: true,
+            motorcycle_brand: true,
+            motorcycle_model: true,
+            motorcycle_submodel: true,
             color: true,
             financialDetails: true,
             expenseDetails: {
@@ -273,6 +281,14 @@ async function findCarById(car_id) {
             bankTransferTracking: true
         }
     });
+
+    // ปรับ response ตาม vehicle_type
+    return {
+        ...car,
+        brand: car.vehicle_type === 'CAR' ? car.car_brand : car.motorcycle_brand,
+        model: car.vehicle_type === 'CAR' ? car.car_model : car.motorcycle_model,
+        submodel: car.vehicle_type === 'CAR' ? car.car_submodel : car.motorcycle_submodel,
+    };
 }
 
 // Update
@@ -510,7 +526,8 @@ async function permanentDeleteCarById(car_id) {
 async function findAllCars({ 
     page, 
     limit, 
-    search, 
+    search,
+    vehicle_type,  // เพิ่ม filter ตาม vehicle_type
     status,
     sortBy,
     sortOrder,
@@ -523,6 +540,7 @@ async function findAllCars({
 }) {
     const where = {
         deleted_at: null,
+        ...(vehicle_type && { vehicle_type }),
         AND: [
             search ? {
                 OR: [

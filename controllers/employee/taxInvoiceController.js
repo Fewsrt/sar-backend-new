@@ -58,26 +58,8 @@ const getTaxInvoicesByCarId = async (req, res) => {
 
 // Create tax invoice
 const createTaxInvoice = async (req, res) => {
-    const {
-        car_id,
-        invoice_date,
-        customer_id,
-        sale_price_before_vat,
-        vat_7_percent,
-        sale_price_incl_vat,
-        invoice_type
-    } = req.body;
-
     try {
-        const newInvoice = await taxInvoiceModel.createTaxInvoice({
-            car_id,
-            invoice_date,
-            customer_id,
-            sale_price_before_vat,
-            vat_7_percent,
-            sale_price_incl_vat,
-            invoice_type
-        });
+        const newInvoice = await taxInvoiceModel.createTaxInvoice(req.body);
         res.status(201).json(newInvoice);
     } catch (error) {
         console.error('Error in createTaxInvoice:', error);
@@ -126,6 +108,45 @@ const deleteTaxInvoice = async (req, res) => {
     }
 };
 
+// Get car tax invoices
+const getCarTaxInvoices = async (req, res) => {
+    const { car_id } = req.params;
+    
+    try {
+        const taxDetails = await taxInvoiceModel.getCarTaxInvoices(parseInt(car_id));
+        if (!taxDetails) {
+            return res.status(404).json({ error: 'No tax details found for this car' });
+        }
+        
+        res.json(taxDetails);
+    } catch (error) {
+        console.error('Error fetching car tax invoices:', error);
+        res.status(500).json({ error: 'Unable to fetch car tax invoices' });
+    }
+};
+
+// ปรับ controller สำหรับดาวน์โหลด PDF
+const downloadTaxInvoicePDF = async (req, res) => {
+    const { invoiceId } = req.params;
+    
+    try {
+        // ดึงข้อมูลใบกำกับภาษี
+        const invoice = await taxInvoiceModel.getTaxInvoiceById(invoiceId);
+        if (!invoice) {
+            return res.status(404).json({ error: 'Tax invoice not found' });
+        }
+
+        // สร้าง PDF
+        const pdfPath = await taxInvoiceModel.createAndSendInvoicePDF(invoice);
+        
+        // ส่งไฟล์กลับไป
+        res.download(pdfPath, `tax_invoice_${invoice.invoice_no}.pdf`);
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ error: 'Unable to generate PDF' });
+    }
+};
+
 module.exports = {
     getAllTaxInvoices,
     getTaxInvoiceById,
@@ -134,4 +155,6 @@ module.exports = {
     createTaxInvoice,
     updateTaxInvoice,
     deleteTaxInvoice,
+    getCarTaxInvoices,
+    downloadTaxInvoicePDF
 }; 

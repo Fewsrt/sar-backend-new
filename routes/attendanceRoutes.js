@@ -1,31 +1,51 @@
-// routes/attendanceRoutes.js
 const express = require('express');
-const { getAttendanceRecords, getAttendanceById, getAttendanceByEmployeeCode, createAttendance, updateAttendanceByEmployeeCode, deleteAttendance, getLatestAttendance } = require('../controllers/employee/attendanceController');
-const authenticateToken = require('../middleware/authenticateToken');
-
 const router = express.Router();
+const attendanceController = require('../controllers/employee/attendanceController');
+const authenticateToken = require('../middleware/authenticateToken');
+const authorizeRoles = require('../middleware/roleMiddleware');
 
-// เส้นทางสำหรับจัดการข้อมูลการเข้างาน
+// Get monthly attendance summary
+router.get('/summary', 
+    authenticateToken, 
+    attendanceController.getMonthlyAttendanceSummary
+);
 
-// Get list of attendance records
-router.get('/', authenticateToken, getAttendanceRecords);
+// Get attendance records with date range
+router.get('/employee-code/:employeeCode', 
+    authenticateToken, 
+    attendanceController.getAttendanceByEmployeeCode
+);
 
-// Get attendance records by employee code
-router.get('/employee-code/:employeeCode', authenticateToken, getAttendanceByEmployeeCode);
+// Get list of all attendance records (HR/Admin only)
+router.get('/', 
+    authenticateToken, 
+    authorizeRoles('admin', 'hr'),
+    attendanceController.getAttendanceRecords
+);
 
-// Get attendance record by ID
-router.get('/:attendanceId', authenticateToken, getAttendanceById);
+// Create new attendance record
+router.post('/', 
+    authenticateToken, 
+    attendanceController.createAttendance
+);
 
-// Create a new attendance record
-router.post('/', authenticateToken, createAttendance);
+// Update attendance record
+router.patch('/:attendanceId', 
+    authenticateToken, 
+    attendanceController.updateAttendanceByEmployeeCode
+);
 
-// Update attendance record by ID
-router.patch('/:attendanceId', authenticateToken, updateAttendanceByEmployeeCode);
+// Delete attendance record (HR/Admin only)
+router.delete('/:attendanceId', 
+    authenticateToken, 
+    authorizeRoles('admin', 'hr'),
+    attendanceController.deleteAttendance
+);
 
-// Delete attendance record by ID
-router.delete('/:attendanceId', authenticateToken, deleteAttendance);
-
-// Get latest attendance record by employee code
-router.get('/latest/:employee_code', authenticateToken, getLatestAttendance);
+// Get latest attendance record
+router.get('/latest/:employee_code', 
+    authenticateToken, 
+    attendanceController.getLatestAttendance
+);
 
 module.exports = router;

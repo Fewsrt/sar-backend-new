@@ -9,6 +9,9 @@ const http = require('http');
 const os = require('os');
 // const createSocketServer = require('./config/socketConfig');
 
+// Import cron jobs
+require('./jobs/checkoutReminder');
+
 // Import middlewares
 const securityMiddleware = require('./middleware/security.js');
 const { errorHandler, AppError } = require('./middleware/errorHandler.js');

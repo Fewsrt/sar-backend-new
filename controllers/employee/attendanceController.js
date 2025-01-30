@@ -39,18 +39,25 @@ const getAttendanceById = async (req, res) => {
 // Get attendance records by employee code
 const getAttendanceByEmployeeCode = async (req, res) => {
     const { employeeCode } = req.params;
+    const { startDate, endDate } = req.query;
+    
     try {
-        const attendanceRecords = await attendanceModel.getAttendanceRecordsByEmployeeCode(employeeCode);
+        const attendanceRecords = await attendanceModel.getAttendanceRecordsByEmployeeCode(
+            employeeCode,
+            startDate,
+            endDate
+        );
+        
         if (!attendanceRecords || attendanceRecords.length === 0) {
-            res.status(404).json({ error: 'No attendance records found for this employee' });
-        } else {
-            // แยก password ออกจากข้อมูลพนักงานใน attendanceRecords
-            const filteredAttendanceRecords = attendanceRecords.map(record => {
-                const { employee: { password, ...employeeData }, ...rest } = record;
-                return { ...rest, employee: employeeData };
-            });
-            res.json(filteredAttendanceRecords);
+            return res.status(404).json({ error: 'No attendance records found for this employee' });
         }
+
+        const filteredAttendanceRecords = attendanceRecords.map(record => {
+            const { employee: { password, ...employeeData }, ...rest } = record;
+            return { ...rest, employee: employeeData };
+        });
+        
+        res.json(filteredAttendanceRecords);
     } catch (error) {
         res.status(500).json({ error: 'Unable to fetch attendance records for employee' });
     }
@@ -95,7 +102,7 @@ const createAttendance = async (req, res) => {
         check_in_longitude, 
         status, 
         note,
-        check_in_image  // รับ base64 string ของรูปภาพ
+        check_in_image
     } = req.body;
     
     const employee_code = req.user.employee_code;
@@ -114,10 +121,22 @@ const createAttendance = async (req, res) => {
             check_in_longitude,
             status,
             note,
-            check_in_image: image_path  // เพิ่ม path รูปภาพ
+            check_in_image: image_path
         });
 
-        res.status(201).json(newAttendance);
+        // ถ้ามีการหักเงิน ให้แสดงข้อมูลเพิ่มเติม
+        const deductionInfo = newAttendance.deduction_amount > 0 
+            ? {
+                lateMinutes: newAttendance.late_minutes,
+                deductionAmount: newAttendance.deduction_amount,
+                isHalfDay: newAttendance.is_half_day_absent
+            }
+            : null;
+
+        res.status(201).json({
+            ...newAttendance,
+            deductionInfo
+        });
     } catch (error) {
         console.error('Error creating attendance record:', error);
         res.status(500).json({ 
@@ -225,6 +244,75 @@ const updateCheckOut = async (req, res) => {
     }
 };
 
+// Get monthly attendance summary with deductions
+const getMonthlyAttendanceSummary = async (req, res) => {
+    const { year, month } = req.query;
+    const employee_code = req.user.employee_code;
+
+    try {
+        const summary = await attendanceModel.getMonthlyAttendanceSummary(
+            employee_code,
+            parseInt(year),
+            parseInt(month)
+        );
+
+        // เพิ่มข้อมูลการหักเงิน
+        const totalDeductions = summary.records.reduce(
+            (sum, record) => sum + (record.deduction_amount || 0), 
+            0
+        );
+
+        res.json({
+            ...summary,
+            totalDeductions,
+            deductionDetails: summary.records
+                .filter(record => record.deduction_amount > 0)
+                .map(record => ({
+                    date: record.check_in_time,
+                    lateMinutes: record.late_minutes,
+                    deductionAmount: record.deduction_amount,
+                    isHalfDay: record.is_half_day_absent
+                }))
+        });
+    } catch (error) {
+        console.error('Error getting monthly summary:', error);
+        res.status(500).json({ 
+            error: 'Unable to get monthly attendance summary',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// จัดการกรณีลืม checkout
+const handleMissingCheckout = async (req, res) => {
+    const { date } = req.body;
+    const employee_code = req.user.employee_code;
+
+    try {
+        const result = await attendanceModel.handleMissingCheckout(
+            employee_code,
+            new Date(date)
+        );
+
+        if (!result) {
+            return res.status(404).json({ 
+                message: 'ไม่พบข้อมูลการลงเวลาที่ยังไม่ได้ checkout' 
+            });
+        }
+
+        res.json({
+            message: 'บันทึก checkout อัตโนมัติสำเร็จ',
+            data: result
+        });
+    } catch (error) {
+        console.error('Error handling missing checkout:', error);
+        res.status(500).json({ 
+            error: 'ไม่สามารถบันทึก checkout อัตโนมัติได้',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 module.exports = {
     getAttendanceRecords,
     getAttendanceById,
@@ -233,5 +321,7 @@ module.exports = {
     updateAttendanceByEmployeeCode,
     deleteAttendance,
     getLatestAttendance,
-    updateCheckOut
+    updateCheckOut,
+    getMonthlyAttendanceSummary,
+    handleMissingCheckout
 };

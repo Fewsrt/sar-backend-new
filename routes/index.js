@@ -38,5 +38,7 @@ router.use('/withholding-tax-invoices', auth, asyncHandler(require('./withholdin
 router.use('/expense-categories', auth, asyncHandler(require('./expenseCategoryRoutes')));
 router.use('/support-tickets', auth, asyncHandler(require('./supportTicketRoutes')));
 router.use('/floorplan', auth, asyncHandler(require('./floorplanFinancingRoutes')));
+router.use('/leave-requests', auth, asyncHandler(require('./leaveRequestRoutes')));
+router.use('/salaries', auth, asyncHandler(require('./salaryRoutes')));
 
 module.exports = router; 
